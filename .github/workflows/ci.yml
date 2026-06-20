@@ -4,46 +4,61 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege by default.
+permissions:
+  contents: read
 
 jobs:
-  lint-test:
+  python:
+    name: Python (ruff + pytest)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
-
-      - name: Install (editable + dev)
+          cache-dependency-path: pyproject.toml
+      - name: Install
         run: |
           python -m pip install --upgrade pip
-          # Tolerate the pre-scaffold state: install only if a manifest exists yet.
-          if [ -f pyproject.toml ]; then pip install -e ".[dev]" || pip install -e .; fi
-          pip install ruff pytest
-
-      - name: Ruff (lint + format check)
+          pip install -e ".[dev]"
+      - name: Lint (ruff)
         run: |
           ruff check .
           ruff format --check .
-
-      - name: Pytest
+      - name: Test (pytest)
         run: pytest -q
 
   rust-core:
+    name: Rust core (fmt + clippy + test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Skip if no crate yet
+      - name: Gate on crate manifest
         id: gate
         run: |
-          if [ -f crates/guardrails-core/Cargo.toml ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+          if [ -f crates/guardrails-core/Cargo.toml ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No crate yet — skipping Rust lane."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: dtolnay/rust-toolchain@stable
         if: steps.gate.outputs.go == 'true'
         with:
           components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        if: steps.gate.outputs.go == 'true'
+        with:
+          workspaces: crates/guardrails-core
       - name: fmt + clippy + test
         if: steps.gate.outputs.go == 'true'
         working-directory: crates/guardrails-core
@@ -53,13 +68,19 @@ jobs:
           cargo test
 
   web:
+    name: Web (tsc + eslint + vitest)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Skip if no web app yet
+      - name: Gate on package.json
         id: gate
         run: |
-          if [ -f web/package.json ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+          if [ -f web/package.json ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No web app yet — skipping web lane."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-node@v4
         if: steps.gate.outputs.go == 'true'
         with:
@@ -74,3 +95,25 @@ jobs:
           npx tsc --noEmit
           npx eslint .
           npx vitest run
+
+  secrets-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+
+  ci-ok:
+    name: CI passed
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [python, rust-core, web, secrets-scan]
+    steps:
+      - name: Require all lanes to succeed
+        run: |
+          for r in "${{ needs.python.result }}" "${{ needs.rust-core.result }}" "${{ needs.web.result }}" "${{ needs.secrets-scan.result }}"; do
+            if [ "$r" != "success" ]; then echo "A required job did not succeed ($r)"; exit 1; fi
+          done
+          echo "All required jobs passed."
