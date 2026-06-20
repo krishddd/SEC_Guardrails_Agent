@@ -31,3 +31,46 @@ jobs:
 
       - name: Pytest
         run: pytest -q
+
+  rust-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip if no crate yet
+        id: gate
+        run: |
+          if [ -d crates/guardrails-core ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.gate.outputs.go == 'true'
+        with:
+          components: clippy, rustfmt
+      - name: fmt + clippy + test
+        if: steps.gate.outputs.go == 'true'
+        working-directory: crates/guardrails-core
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip if no web app yet
+        id: gate
+        run: |
+          if [ -f web/package.json ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.go == 'true'
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: install + tsc + eslint + vitest
+        if: steps.gate.outputs.go == 'true'
+        working-directory: web
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npx eslint .
+          npx vitest run

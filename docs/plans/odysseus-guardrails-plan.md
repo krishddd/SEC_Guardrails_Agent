@@ -6,12 +6,19 @@
 **stub agent**; live A/B when Odysseus is up. Metrics always reported **split** (ASR vs FPR/utility).*
 
 ## Scaffold needed (run `/scaffold odysseus-guardrails` before T1)
-- `pyproject.toml`: project `sec-guardrails`, Python 3.11, deps (fastapi, uvicorn, httpx, pydantic>=2,
-  opentelemetry-sdk/-api, presidio-analyzer, transformers, torch (cpu), mistralai), `[dev]` (pytest,
-  ruff). ruff + pytest config.
+- **Python (control plane):** `pyproject.toml` (maturin build backend), project `sec-guardrails`,
+  Python 3.11, deps (fastapi, uvicorn, httpx, pydantic>=2, opentelemetry-sdk/-api, presidio-analyzer,
+  transformers, torch (cpu), mistralai), `[dev]` (pytest, ruff). ruff + pytest config.
 - Package layout: `src/gateway/`, `src/rails/{input,dialog,output,tool,memory,reasoning,multiagent,oversight}/`,
   `src/core/`, `src/eval/`, `tests/` (+ `tests/fixtures/`, `tests/stub_agent/`).
+- **Rust core (ADR-0006):** `crates/guardrails-core/` cargo crate, PyO3 + maturin, module
+  `guardrails_core`; `Cargo.toml`, clippy/fmt config; built into the Python wheel. A `tests/vectors/`
+  shared fixture set exercised against both the Rust ext and the Python fallback.
+- **Frontend (ADR-0007):** `web/` Vite + React + TypeScript app (HITL + dashboard + sanitizer harness);
+  `package.json`, tsconfig, eslint/prettier, vitest. No security logic in the UI.
 - `tests/stub_agent/` FastAPI stub mirroring `/api/v1/chat` + `/api/health` (+ a fake tool trace).
+- **Polyglot CI:** ci.yml gains lanes for Rust (cargo fmt/clippy/test + maturin build) and web
+  (tsc/eslint/vitest) alongside Python (ruff/pytest).
 
 ---
 
@@ -31,19 +38,25 @@
 - [ ] **T6 — Observability + audit** (`src/core/audit.py`, `src/core/otel.py`). Per-request trace id;
   OTel span + append-only JSONL audit per decision. **Done:** one pass-through call → exactly one span +
   one audit record. *(needs T5)*
+- [ ] **T6b — Rust core crate (ADR-0006)** (`crates/guardrails-core/`, PyO3/maturin → `guardrails_core`).
+  Build skeleton + one trivial exported fn + the shared `tests/vectors/` harness wired to both the Rust
+  ext and a Python fallback shim. **Done:** `maturin develop` builds; `import guardrails_core` works;
+  the dual-backend test harness runs green. *(blocks T8, T11, T18, T21)*
 
 ## Phase 1 — Input rails (L1) + early regression gate
 - [ ] **T7 — Latency spike (FIRST in P1).** Bench deberta-v3 + Presidio + secrets-scrub together on the
   host. **Done:** measured warmed p50 recorded in `docs/architecture/`; if >30ms, revise spec SC3 now.
-- [ ] **T8 — Secrets/regex scrubber** (`src/rails/input/secrets.py`). **Done:** planted secret
-  detected+redacted+audited; benign passes. *(needs T4)*
+- [ ] **T8 — Secrets/regex scrubber (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
+  `src/rails/input/secrets.py` wrapper; Python fallback). **Done:** planted secret detected+redacted+
+  audited; benign passes; Rust + fallback agree on the shared vectors. *(needs T4, T6b)*
 - [ ] **T9 — PI/jailbreak classifier** (`src/rails/input/prompt_injection.py`, deberta-v3, warmed).
   **Done:** blocks ≥ threshold of `Security_module` `injection_payloads`/`xpia_payloads`; FPR measured on
   a benign set; both logged split. *(needs T4)*
 - [ ] **T10 — PII detect+redact** (`src/rails/input/pii.py`, Presidio). **Done:** email/SSN/phone
   redacted; allowlist honored. *(needs T4)*
-- [ ] **T11 — Spotlighting + boundary-awareness** (`src/rails/input/spotlight.py`). Datamark/delimit
-  untrusted spans; inject boundary-awareness prefix. **Done:** untrusted span marked; unit test.
+- [ ] **T11 — Spotlighting + boundary-awareness (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
+  `src/rails/input/spotlight.py`; Python fallback). Datamark/delimit untrusted spans; inject
+  boundary-awareness prefix. **Done:** untrusted span marked; Rust + fallback agree on vectors. *(needs T6b)*
 - [ ] **T12 — Minimal CI regression gate (pulled forward).** CI job: "ASR on the `Security_module`
   fixture set must not regress" vs a committed baseline. **Done:** CI fails on a synthetic regression.
   *(needs T9)*
@@ -61,8 +74,9 @@
   ShieldGemma 2 fallback, `_method` recorded). **Done:** unsafe blocked, benign passes.
 - [ ] **T17 — PII/secret/canary leak** (`src/rails/output/leak.py`). Plant canary in system prompt;
   detect in output. **Done:** leaked canary → block; output secret redacted.
-- [ ] **T18 — URL/markdown/HTML sanitizer** (`src/rails/output/sanitize.py`). **Done:** data-bearing
-  image/link stripped; allowlisted links kept; raw HTML/script blocked.
+- [ ] **T18 — URL/markdown/HTML sanitizer (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
+  `src/rails/output/sanitize.py`; Python fallback). **Done:** data-bearing image/link stripped;
+  allowlisted links kept; raw HTML/script blocked; Rust + fallback agree. Visual harness in `web/` (T40).
 - [ ] **T19 — Grounding check** (`src/rails/output/grounding.py`, reuse eval pipeline `grounding_judge`).
   **Done:** ungrounded claim flagged when sources present; toggle honored.
 
@@ -70,8 +84,11 @@
 - [ ] **T20 — Trace-export hook in Odysseus** (`odysseus/src/tool_execution.py`, read-only; ADR-0005).
   Emit normalized tool-call events to the gateway. **Done:** stub/live tool call produces a trace event
   the gateway receives; Odysseus behaviour unchanged. *(pins OQ3 schema)*
-- [ ] **T21 — In-house policy DSL** (`src/rails/tool/policy.py`, deny-by-default over normalized
-  `ToolCall`). **Done:** `bash`/`api_call` blocked unless policy allows; decision logged w/ policy id.
+- [ ] **T21 — In-house policy DSL (Rust-backed, ADR-0006/0004)** (parser+evaluator in
+  `crates/guardrails-core/` + `src/rails/tool/policy.py` wrapper; Python fallback). Deny-by-default over a
+  normalized `ToolCall`. **Done:** `bash`/`api_call` blocked unless policy allows; decision logged w/
+  policy id; Rust + fallback agree on the policy vectors. *(needs T6b; the Rust parser is the highest-value
+  memory-safety target — see T22)*
 - [ ] **T22 — DSL adversarial hardening (ADR-0004 gate).** Adversarial bypass test set (encoding, arg
   smuggling, fail-open) + `security-reviewer` pass. **Done:** all bypass tests blocked; review clean.
   *(blocks T23)*
@@ -114,5 +131,19 @@
 - [ ] **T37 — Full CI quality gate.** ASR/FPR thresholds blocking (extends T12). **Done:** CI fails on
   ASR regression or FPR over threshold.
 
+## Phase 9 — Frontend: HITL + observability (TypeScript/React, ADR-0007)
+- [ ] **T38 — Gateway UI API** (`src/gateway/ui_api.py`). Minimal authenticated JSON API: list pending
+  approvals, post approve/reject, read audit log + eval reports. Treat all input as untrusted; rate-limit.
+  **Done:** endpoints unit-tested; default-deny on unknown/expired approval id. *(needs T6, T23)*
+- [ ] **T39 — HITL approval app** (`web/` — pending-approval view rendering `ToolCall` + provenance/taint;
+  approve/reject; default-deny on timeout). **Done:** vitest covers approve, reject, timeout-deny; no
+  security logic client-side. *(needs T38)*
+- [ ] **T40 — Observability/audit dashboard + sanitizer harness** (`web/`). ASR/FPR split, latency
+  budgets, block reasons, NIST/EU-AI-Act control-map view; plus a DOM visual-regression harness for the
+  T18 sanitizer. **Done:** dashboard renders from sample audit/eval data; sanitizer harness proves a
+  data-bearing image/link is stripped in a real DOM. *(needs T18, T36)*
+
 ## Cross-cutting
 - [ ] Daily push to `github.com/krishddd/SEC_Guardrails_Agent` at end of each session (`.env` gitignored).
+- [ ] Polyglot CI green across all three lanes (Python ruff/pytest, Rust fmt/clippy/test+maturin,
+  web tsc/eslint/vitest) — folded into T12/T37 gates.

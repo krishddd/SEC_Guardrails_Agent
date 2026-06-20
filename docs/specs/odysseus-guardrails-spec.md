@@ -26,6 +26,10 @@ or do is allowed, and measurably reduces attack success without destroying task 
 - **G9** **Observability**: OpenTelemetry trace + append-only audit record for every rail decision.
 - **G10** An **A/B evaluation harness** that runs `Security_module` direct vs via gateway and reports
   ASR per attack class and utility retention, **split** — plus AgentDojo/WASP via Inspect Evals.
+- **G11 (polyglot)** The security-critical deterministic core (secrets scanner, spotlighting/datamarker,
+  URL/HTML sanitizer, L4 policy-DSL evaluator, taint primitives) is implemented in **Rust** (PyO3 ext
+  `guardrails_core`, pure-Python fallback; ADR-0006); the **HITL approval app** and **observability/
+  audit dashboard** are a **TypeScript/React** app (ADR-0007). Python remains the control plane.
 
 ## Non-goals (explicit exclusions)
 - **Skill/MCP supply-chain guardrails** — out of scope (Reference.md canonical). Offensive ASI04
@@ -45,6 +49,9 @@ or do is allowed, and measurably reduces attack success without destroying task 
 - **C6** Python 3.11 / FastAPI / httpx / Pydantic v2 / pytest / ruff (see CLAUDE.md).
 - **C7** Defense-in-depth: no single classifier is trusted; deny-by-default; treat all external content
   as untrusted.
+- **C8** Polyglot toolchain: Python 3.11 (control plane), Rust stable + maturin/PyO3 (`guardrails_core`),
+  Node 20 + TypeScript/Vite (`web/`). CI must lint+test all three lanes; Rust and Python fallback share a
+  test-vector set and must agree. The gateway↔UI API is treated as untrusted client input.
 
 ## Open questions
 - **OQ1** Is Odysseus genuinely multi-agent (does it coordinate sub-agents)? Determines whether the
