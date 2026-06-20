@@ -1,0 +1,9 @@
+# Default owner for everything in this repo.
+* @krishddd
+
+# Security-critical surfaces — review with extra care.
+/.github/        @krishddd
+/.claude/        @krishddd
+/CLAUDE.md       @krishddd
+/crates/         @krishddd
+/src/rails/tool/ @krishddd
