@@ -4,18 +4,26 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   review:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: read
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
+      - name: Skip when ANTHROPIC_API_KEY is not configured
+        if: env.HAS_KEY != 'true'
+        run: echo "ANTHROPIC_API_KEY secret not set — skipping Claude review. Add it in repo settings to enable."
       - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
         with:
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
+        if: env.HAS_KEY == 'true'
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: "/review"
-          allowed-tools: "Read,Grep,Glob,Bash(git diff:*)"

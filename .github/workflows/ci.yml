@@ -6,12 +6,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Cancel superseded runs on the same ref.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Least privilege by default.
 permissions:
   contents: read
 
@@ -104,6 +102,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   ci-ok:
     name: CI passed
