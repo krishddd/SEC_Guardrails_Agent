@@ -39,7 +39,7 @@ jobs:
       - name: Skip if no crate yet
         id: gate
         run: |
-          if [ -d crates/guardrails-core ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+          if [ -f crates/guardrails-core/Cargo.toml ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
       - uses: dtolnay/rust-toolchain@stable
         if: steps.gate.outputs.go == 'true'
         with:

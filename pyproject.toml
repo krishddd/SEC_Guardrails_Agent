@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+# NOTE: switches to the maturin backend at T6b, once crates/guardrails-core lands and the
+# guardrails_core Rust extension is part of the wheel. For now setuptools keeps the Python
+# control plane installable WITHOUT a Rust toolchain (Rust core has a pure-Python fallback).
+
+[project]
+name = "sec-guardrails"
+version = "0.0.1"
+description = "Defensive 7-layer runtime guardrails gateway for the Odysseus agent"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "httpx>=0.27",
+    "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+# Heavy ML detectors — installed when running the real input/output classifiers.
+ml = ["transformers>=4.40", "torch>=2.2", "presidio-analyzer>=2.2.362"]
+mistral = ["mistralai>=1.0"]
+otel = ["opentelemetry-sdk>=1.25", "opentelemetry-api>=1.25"]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
