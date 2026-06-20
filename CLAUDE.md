@@ -3,21 +3,27 @@
 Defensive, build-from-scratch 7-layer runtime guardrails for the **Odysseus** agent. A reverse-proxy
 **guardrail gateway** on `:7100` fronts Odysseus on `:7000`, enforcing rails on every turn.
 
-## Stack
-- **Language:** Python 3.11
-- **Web/gateway:** FastAPI + Uvicorn
-- **HTTP client:** httpx
-- **Validation:** Pydantic v2
-- **Tests:** pytest
-- **Lint/format:** ruff (lint + format)
-- **Tracing:** OpenTelemetry (GenAI semconv)
-- **Package manager:** pip + `pyproject.toml` (editable install: `pip install -e .`)
+## Stack (polyglot — each language where it earns its place; ADR-0006/0007)
+- **Control plane — Python 3.11:** FastAPI + Uvicorn gateway, httpx, Pydantic v2, classifier
+  orchestration, eval harness. Lint/format: ruff. Tests: pytest.
+- **Security core — Rust (stable):** `crates/guardrails-core/` compiled via PyO3 + maturin to the
+  `guardrails_core` Python extension — secrets scanner, spotlighting/datamarker, URL/HTML sanitizer,
+  L4 policy-DSL parser+evaluator, taint primitives. Each has a pure-Python fallback. Lint: clippy; fmt:
+  cargo fmt; tests: cargo test + shared `tests/vectors/` run against both backends.
+- **Frontend — TypeScript/React (Vite):** `web/` HITL approval app + observability/audit dashboard +
+  sanitizer visual harness. No security logic client-side. Lint: eslint/prettier; tests: vitest.
+- **Policy v2:** Rego/OPA (L4 migration path). **Hooks:** Bash.
+- **Tracing:** OpenTelemetry (GenAI semconv).
+- **Package manager:** pip + `pyproject.toml` (maturin backend; `pip install -e .` / `maturin develop`).
 - **Deploy target:** local guardrail gateway process on `:7100` in front of Odysseus Docker `:7000`.
   `/ship` is the only command allowed to tag/release.
 
 ## Conventions
 - **Commits:** Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `ci:`).
 - **Branches:** `feat/<slug>`, `fix/<slug>`; default branch is `main`.
+- **Per-language gates:** Python -> `ruff check` + `ruff format --check` + `pytest`; Rust -> `cargo fmt
+  --check` + `cargo clippy -D warnings` + `cargo test`; web -> `tsc --noEmit` + `eslint` + `vitest`.
+  A Rust-backed rail and its Python fallback must agree on the shared test vectors.
 - **Docs trail:** specs → `docs/specs/`, exploration + architecture + ADRs → `docs/architecture/`
   (ADRs in `docs/architecture/adr/<NNNN>-<slug>.md`), task plans → `docs/plans/`.
 - **Source:** gateway in `src/gateway/`, rails in `src/rails/`, tests in `tests/`.

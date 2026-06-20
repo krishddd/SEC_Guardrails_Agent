@@ -22,9 +22,29 @@ Two cross-cutting principles (Reference §2) govern everything: **defense-in-dep
 trusted; layers are independent) and **treat all external content as untrusted** (provenance labels +
 taint tracking; data crossing into reasoning is marked, sanitized, or sandboxed).
 
+## Language strategy (polyglot — each language where it earns its place)
+The system is **polyglot by design** (ADR-0006, ADR-0007), not Python-only:
+- **Python** — control plane + ML orchestration: the FastAPI gateway, classifier integration
+  (deberta-v3, Presidio, Mistral Moderation/ShieldGemma), the eval harness, and the `Rail`/`RailChain`
+  glue. The default language unless a rail is hot-path-deterministic or human-facing.
+- **Rust** — the deterministic, security-critical core compiled to a Python extension
+  (`guardrails_core` via PyO3/maturin): secrets/regex scanner, spotlighting/datamarker, URL/HTML/markdown
+  sanitizer, the L4 **policy-DSL parser+evaluator**, and taint-propagation primitives. Memory safety at
+  the trust boundary is a security requirement; each Rust rail has a pure-Python fallback behind the same
+  `Rail` interface. Hits the <30 ms input budget.
+- **TypeScript/React (Vite)** — human-facing surfaces in `web/`: the HITL approval app and the
+  observability/audit dashboard (ASR/FPR split, latency, block reasons, NIST/EU-AI-Act control map),
+  plus the sanitizer visual-regression harness. The UI holds **no** security logic.
+- **Rego** — L4 policy v2 path (ADR-0004), once the in-house DSL outgrows itself.
+- **Bash** — the pre-edit-guard hook (already in `.claude/hooks/`).
+
 ## Component breakdown
+- **`crates/guardrails-core/`** — Rust workspace crate (PyO3/maturin) exporting the deterministic core
+  to Python as `guardrails_core`; shared test vectors run against both it and the Python fallback.
+- **`web/`** — TypeScript/React (Vite) app: HITL approval UI, observability/audit dashboard, sanitizer
+  visual harness. Talks to a minimal gateway JSON API (treated as untrusted client input).
 - **`src/gateway/`** — FastAPI proxy: request/response interception, rail-chain invocation, Odysseus
-  client (4xx-no-retry, header auth), OTel + audit emission.
+  client (4xx-no-retry, header auth), OTel + audit emission, and the HITL + dashboard JSON API.
 - **`src/rails/`** — one module per rail, all implementing `Rail.inspect(ctx) -> Decision`:
   - `input/` — secrets scrub, deberta-v3 PI/jailbreak, Presidio PII, spotlighting + boundary-awareness.
   - `dialog/` — Task-Shield off-task detector, deny-by-default topic policy.
