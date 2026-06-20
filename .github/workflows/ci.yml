@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install (editable + dev)
+        run: |
+          python -m pip install --upgrade pip
+          # Tolerate the pre-scaffold state: install only if a manifest exists yet.
+          if [ -f pyproject.toml ]; then pip install -e ".[dev]" || pip install -e .; fi
+          pip install ruff pytest
+
+      - name: Ruff (lint + format check)
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Pytest
+        run: pytest -q

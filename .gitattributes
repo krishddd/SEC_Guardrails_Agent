@@ -1,0 +1,4 @@
+# Keep shell scripts LF so the bash hook runs on all platforms.
+*.sh text eol=lf
+# Normalize text; let git decide the rest.
+* text=auto

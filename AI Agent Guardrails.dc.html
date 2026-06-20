@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:oklch(0.17 0.018 255);
+    --bg-2:oklch(0.21 0.022 255);
+    --panel:oklch(0.245 0.024 255);
+    --line:oklch(0.34 0.022 255);
+    --line-soft:oklch(0.28 0.02 255);
+    --ink:oklch(0.96 0.004 255);
+    --ink-dim:oklch(0.74 0.012 255);
+    --ink-faint:oklch(0.56 0.014 255);
+    --teal:oklch(0.84 0.115 178);
+    --amber:oklch(0.84 0.115 72);
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+</style>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<section data-label="Cover" data-speaker-notes="Frame the talk: this is a practitioner reference for securing production AI agents, synthesized from OWASP, NIST, vendor docs, and 2023–2026 research. Audience is security & risk.">
+  <div style="height:100%;box-sizing:border-box;padding:90px 110px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;right:0;width:620px;height:100%;background:linear-gradient(180deg,transparent,transparent);opacity:0.5"></div>
+    <div style="position:absolute;top:90px;right:110px;font-family:var(--mono);font-size:24px;color:var(--ink-faint);text-align:right;line-height:1.9">
+      <div style="color:var(--teal)">[ STATUS: UNTRUSTED ]</div>
+      <div>OWASP &middot; NIST &middot; MITRE ATLAS</div>
+      <div>CSA MAESTRO &middot; EU AI ACT</div>
+    </div>
+    <div style="font-family:var(--mono);font-size:24px;letter-spacing:0.2em;color:var(--teal);text-transform:uppercase">A Practitioner's Reference &middot; 2023&ndash;2026</div>
+    <div>
+      <h1 style="font-size:118px;font-weight:700;line-height:0.98;letter-spacing:-0.03em">AI Agent<br>Guardrails<span style="color:var(--teal);font-weight:500;animation:blink 1.1s step-end infinite">_</span></h1>
+      <p style="font-size:38px;color:var(--ink-dim);font-weight:400;margin-top:34px;max-width:1180px;line-height:1.35">The runtime control plane for production agent systems &mdash; techniques, frameworks, and research, organized by control layer.</p>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:24px">
+      <span style="border:1px solid var(--line);border-radius:4px;padding:10px 18px;color:var(--ink-dim)">Threat model</span>
+      <span style="border:1px solid var(--line);border-radius:4px;padding:10px 18px;color:var(--ink-dim)">7 control layers</span>
+      <span style="border:1px solid var(--line);border-radius:4px;padding:10px 18px;color:var(--ink-dim)">Products &amp; frameworks</span>
+      <span style="border:1px solid var(--line);border-radius:4px;padding:10px 18px;color:var(--ink-dim)">Reference architecture</span>
+      <span style="border:1px solid var(--line);border-radius:4px;padding:10px 18px;color:var(--ink-dim)">Roadmap</span>
+    </div>
+  </div>
+</section>
+
+<section data-label="Threat Landscape" data-speaker-notes="The core framing: an agent is not a chatbot. Every new capability — planning, tools, reading untrusted data, memory, multi-agent — expands the attack surface. Guardrails decide, at every step, whether what the agent is about to read, say, or do is allowed.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;position:relative;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>01 &middot; Why It Matters</span><span style="color:var(--ink-faint)">02 / 18</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1.05fr 0.95fr;gap:72px;flex:1;align-items:center;margin-top:8px">
+      <div>
+        <h2 style="font-size:62px;font-weight:600;line-height:1.04;letter-spacing:-0.02em">An LLM agent is no longer a chatbot.</h2>
+        <p style="font-size:32px;color:var(--ink-dim);line-height:1.45;margin-top:34px;max-width:680px">It plans, calls tools, reads untrusted data from the web and inboxes, writes to databases, holds memory across sessions, and coordinates with other agents. <span style="color:var(--ink)">Each capability expands the attack surface.</span></p>
+        <p style="font-family:var(--mono);font-size:24px;color:var(--teal);margin-top:40px;line-height:1.5">Guardrails are the runtime control plane &mdash; they decide, at every step, whether what the agent is about to read, say, or do is allowed.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:var(--mono);font-size:24px;color:var(--ink-faint);letter-spacing:0.12em;margin-bottom:4px">NEW CAPABILITIES, NEW EXPOSURE</div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:4px;padding:18px 22px"><span style="font-family:var(--mono);color:var(--teal);font-size:24px">→</span><span style="font-size:27px">Plans multi-step tasks autonomously</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:4px;padding:18px 22px"><span style="font-family:var(--mono);color:var(--teal);font-size:24px">→</span><span style="font-size:27px">Calls tools with real credentials</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:4px;padding:18px 22px"><span style="font-family:var(--mono);color:var(--teal);font-size:24px">→</span><span style="font-size:27px">Reads untrusted web, email, documents</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:4px;padding:18px 22px"><span style="font-family:var(--mono);color:var(--teal);font-size:24px">→</span><span style="font-size:27px">Persists memory across sessions</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:4px;padding:18px 22px"><span style="font-family:var(--mono);color:var(--teal);font-size:24px">→</span><span style="font-size:27px">Coordinates with other agents</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Attack Surfaces" data-speaker-notes="The ten reference attack surfaces. Don't read every one — point to the headline categories: indirect prompt injection, tool misuse / confused deputy, and memory poisoning are the ones unique to agents and hardest to catch.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>01 &middot; Why It Matters</span><span style="color:var(--ink-faint)">03 / 18</span>
+    </div>
+    <h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em;margin-top:14px">The reference attack surfaces</h2>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;flex:1;margin-top:34px;grid-auto-rows:1fr">
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">01</span><span style="font-size:27px;font-weight:600;line-height:1.15">Prompt injection</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Direct &amp; indirect &mdash; smuggled via docs, email, web</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">02</span><span style="font-size:27px;font-weight:600;line-height:1.15">Jailbreaks</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Bypass safety training to elicit prohibited content</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">03</span><span style="font-size:27px;font-weight:600;line-height:1.15">Tool misuse</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Confused deputy &mdash; real creds, attacker's target</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">04</span><span style="font-size:27px;font-weight:600;line-height:1.15">Memory &amp; RAG poisoning</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Planted entries retrieved later to bias behavior</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">05</span><span style="font-size:27px;font-weight:600;line-height:1.15">Goal hijacking</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Objective rewritten across long horizons</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">06</span><span style="font-size:27px;font-weight:600;line-height:1.15">Excessive agency</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Over-broad scopes &mdash; unbounded blast radius</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">07</span><span style="font-size:27px;font-weight:600;line-height:1.15">Info disclosure</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">PII, secrets, system prompt leaking via outputs</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">08</span><span style="font-size:27px;font-weight:600;line-height:1.15">Multi-agent attacks</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Agent-in-the-Middle, contagious jailbreaks</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">09</span><span style="font-size:27px;font-weight:600;line-height:1.15">Supply chain</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Malicious skills / MCP servers change behavior on load</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:4px;padding:22px 20px;display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">10</span><span style="font-size:27px;font-weight:600;line-height:1.15">Output side-effects</span><span style="font-size:24px;color:var(--ink-faint);line-height:1.3">Exfiltration links, auto-executed code in responses</span></div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Standards" data-speaker-notes="The threat model isn't ad hoc — it maps to five authoritative documents. For compliance stakeholders, the headline is the EU AI Act: high-risk obligations apply from August 2, 2026, and the audit trail your guardrails produce is the evidence.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>01 &middot; Why It Matters</span><span style="color:var(--ink-faint)">04 / 18</span>
+    </div>
+    <h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em;margin-top:14px">The standards that anchor the threat model</h2>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:48px;flex:1;margin-top:32px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:24px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line-soft)"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);white-space:nowrap;min-width:150px">OWASP LLM</span><span style="font-size:28px;color:var(--ink-dim)">Top 10 for LLM Applications &mdash; 2025</span></div>
+        <div style="display:flex;gap:24px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line-soft)"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);white-space:nowrap;min-width:150px">OWASP AGENTIC</span><span style="font-size:28px;color:var(--ink-dim)">Top 10 for Agentic Applications &mdash; 2026</span></div>
+        <div style="display:flex;gap:24px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line-soft)"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);white-space:nowrap;min-width:150px">NIST</span><span style="font-size:28px;color:var(--ink-dim)">AI RMF + AI 100-2e adversarial ML taxonomy</span></div>
+        <div style="display:flex;gap:24px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line-soft)"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);white-space:nowrap;min-width:150px">MITRE ATLAS</span><span style="font-size:28px;color:var(--ink-dim)">Adversarial techniques in ATT&amp;CK style</span></div>
+        <div style="display:flex;gap:24px;align-items:baseline;padding:16px 0"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);white-space:nowrap;min-width:150px">CSA MAESTRO</span><span style="font-size:28px;color:var(--ink-dim)">Agentic AI threat-modeling framework</span></div>
+      </div>
+      <div style="background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:44px 40px;display:flex;flex-direction:column;gap:18px">
+        <span style="font-family:var(--mono);font-size:24px;color:var(--amber);letter-spacing:0.12em">REGULATORY CLOCK</span>
+        <span style="font-family:var(--mono);font-size:74px;font-weight:600;color:var(--ink);line-height:1">AUG 2<br>2026</span>
+        <span style="font-size:28px;color:var(--ink-dim);line-height:1.4">EU AI Act high-risk obligations take effect. Your guardrails' decision logs <span style="color:var(--ink)">are the compliance evidence.</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="§ Control Model" data-speaker-notes="Section divider. We move from the threats to the control model — where guardrails actually sit in an agent.">
+  <div style="height:100%;box-sizing:border-box;padding:90px 110px;background:var(--bg-2);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden">
+    <div style="position:absolute;left:0;top:0;width:8px;height:100%;background:var(--teal)"></div>
+    <span style="font-family:var(--mono);font-size:200px;font-weight:600;color:var(--line);line-height:0.8">01</span>
+    <h2 style="font-size:84px;font-weight:700;letter-spacing:-0.02em;margin-top:24px">Where guardrails sit</h2>
+    <p style="font-size:32px;color:var(--ink-dim);margin-top:24px;max-width:980px;line-height:1.4">A "rails at every boundary" model &mdash; each control layer is independent, and a failure at one is meant to be caught by the next.</p>
+  </div>
+</section>
+
+<section data-label="7 Control Layers" data-speaker-notes="The seven control layers used throughout this deck. NVIDIA's NeMo formalized five rails; production teams add tool authorization, memory hygiene, and inter-agent checks. The takeaway: defenses live at boundaries, not in one filter.">
+  <div style="height:100%;box-sizing:border-box;padding:80px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>02 &middot; The Control Model</span><span style="color:var(--ink-faint)">06 / 18</span>
+    </div>
+    <h2 style="font-size:54px;font-weight:600;letter-spacing:-0.02em;margin-top:12px">Seven control layers</h2>
+    <div style="display:flex;flex-direction:column;gap:9px;flex:1;margin-top:24px">
+      <div style="display:grid;grid-template-columns:88px 1.1fr 2fr;gap:24px;align-items:center;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:16px 24px;flex:1"><span style="font-family:var(--mono);font-size:26px;color:var(--teal);font-weight:600">L1</span><span style="font-size:27px;font-weight:600">Input rails</span><span style="font-size:25px;color:var(--ink-dim)">PI &amp; jailbreak classifiers, PII redaction, spotlighting</span></div>
+      <div style="display:grid;grid-template-columns:88px 1.1fr 2fr;gap:24px;align-items:center;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:16px 24px;flex:1"><span style="font-family:var(--mono);font-size:26px;color:var(--teal);font-weight:600">L2</span><span style="font-size:27px;font-weight:600">Output rails</span><span style="font-size:25px;color:var(--ink-dim)">Content classifiers, schema / JSON validation</span></div>
+      <div style="display:grid;grid-template-columns:88px 1.1fr 2fr;gap:24px;align-items:center;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:16px 24px;flex:1"><span style="font-family:var(--mono);font-size:26px;color:var(--teal);font-weight:600">L3</span><span style="font-size:27px;font-weight:600">Dialog &amp; topic rails</span><span style="font-size:25px;color:var(--ink-dim)">Colang flows, off-topic redirect, SOP enforcement</span></div>
+      <div style="display:grid;grid-template-columns:88px 1.1fr 2fr;gap:24px;align-items:center;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:16px 24px;flex:1"><span style="font-family:var(--mono);font-size:26px;color:var(--teal);font-weight:600">L4</span><span style="font-size:27px;font-weight:600">Tool &amp; action rails</span><span style="font-size:25px;color:var(--ink-dim)">Least-privilege scopes, allowlists, HITL confirmation</span></div>
+      <div style="display:grid;grid-template-columns:88px 1.1fr 2fr;gap:24px;align-items:center;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:16px 24px;flex:1"><span style="font-family:var(--mono);font-size:26px;color:var(--teal);font-weight:600">L5</span><span style="font-size:27px;font-weight:600">Retrieval &amp; memory rails</span><span style="font-size:25px;color:var(--ink-dim)">Provenance labels, write-time moderation, retrieval gates</span></div>
+      <div style="display:grid;grid-template-columns:88px 1.1fr 2fr;gap:24px;align-items:center;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:16px 24px;flex:1"><span style="font-family:var(--mono);font-size:26px;color:var(--teal);font-weight:600">L6</span><span style="font-size:27px;font-weight:600">Multi-agent comms rails</span><span style="font-size:25px;color:var(--ink-dim)">Signed messages, capability-based delegation</span></div>
+      <div style="display:grid;grid-template-columns:88px 1.1fr 2fr;gap:24px;align-items:center;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:16px 24px;flex:1"><span style="font-family:var(--mono);font-size:26px;color:var(--teal);font-weight:600">L7</span><span style="font-size:27px;font-weight:600">Verification &amp; oversight</span><span style="font-size:25px;color:var(--ink-dim)">Critic agents, self-reflection, task-alignment checks</span></div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Two Principles" data-speaker-notes="Two principles recur in every recent paper and vendor guide. Defense-in-depth — the Swiss-cheese model; a multi-agent defense pipeline took ASR from 30% to 0% by stacking detectors. And: treat all external content as untrusted by default — the agent's reasoning context is a security boundary.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>02 &middot; The Control Model</span><span style="color:var(--ink-faint)">07 / 18</span>
+    </div>
+    <h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em;margin-top:12px">Two principles behind every defense</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:36px;flex:1;margin-top:34px">
+      <div style="background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:46px 44px;display:flex;flex-direction:column">
+        <span style="font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.14em">PRINCIPLE 01</span>
+        <h3 style="font-size:42px;font-weight:600;margin-top:18px;line-height:1.1">Defense-in-depth, not a single point of trust</h3>
+        <p style="font-size:28px;color:var(--ink-dim);line-height:1.45;margin-top:22px">Anthropic's "Swiss-cheese" model: each layer has holes, but they don't line up. No single classifier is robust on its own.</p>
+        <div style="margin-top:auto;padding-top:28px;display:flex;align-items:baseline;gap:18px">
+          <span style="font-family:var(--mono);font-size:58px;font-weight:600;color:var(--teal)">30% → 0%</span>
+          <span style="font-size:25px;color:var(--ink-faint);line-height:1.3">attack success rate when specialized detectors are stacked</span>
+        </div>
+      </div>
+      <div style="background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:46px 44px;display:flex;flex-direction:column">
+        <span style="font-family:var(--mono);font-size:24px;color:var(--amber);letter-spacing:0.14em">PRINCIPLE 02</span>
+        <h3 style="font-size:42px;font-weight:600;margin-top:18px;line-height:1.1">Treat all external content as untrusted</h3>
+        <p style="font-size:28px;color:var(--ink-dim);line-height:1.45;margin-top:22px">The agent's reasoning context is a security boundary. Anything crossing it from outside must be labeled, sanitized, or sandboxed.</p>
+        <div style="margin-top:auto;padding-top:28px;display:flex;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:24px">
+          <span style="border:1px solid var(--line);border-radius:4px;padding:8px 14px;color:var(--ink-dim)">spotlighting</span>
+          <span style="border:1px solid var(--line);border-radius:4px;padding:8px 14px;color:var(--ink-dim)">StruQ</span>
+          <span style="border:1px solid var(--line);border-radius:4px;padding:8px 14px;color:var(--ink-dim)">dual-LLM</span>
+          <span style="border:1px solid var(--line);border-radius:4px;padding:8px 14px;color:var(--ink-dim)">CaMeL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Input Rails" data-speaker-notes="Layer-by-layer key defenses begin. Input rails inspect every token entering context. Three families: detection (deberta-v3, Lakera, LLM Guard), structural prompting (spotlighting drops attack success from over 50% to under 2%), and architectural (dual-LLM, Task Shield). Bottom shows the practical input pipeline.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>03 &middot; Key Defenses</span><span style="color:var(--ink-faint)">08 / 18</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:24px;margin-top:12px"><h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em">Input rails</h2><span style="font-size:30px;color:var(--ink-faint)">prompt injection &middot; jailbreaks &middot; PII</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;flex:1;margin-top:30px">
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">DETECTION</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:16px"><li style="font-size:27px;line-height:1.3"><b>deberta-v3</b> <span style="color:var(--ink-faint)">PI classifier (Protect AI)</span></li><li style="font-size:27px;line-height:1.3"><b>Lakera Guard</b> <span style="color:var(--ink-faint)">&gt;98% @ &lt;50 ms</span></li><li style="font-size:27px;line-height:1.3"><b>LLM Guard</b> <span style="color:var(--ink-faint)">modular OSS scanners</span></li><li style="font-size:27px;line-height:1.3"><b>Vigil / Rebuff</b> <span style="color:var(--ink-faint)">YARA + canary words</span></li></ul></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">STRUCTURAL</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:16px"><li style="font-size:27px;line-height:1.3"><b>Spotlighting</b> <span style="color:var(--ink-faint)">delimit / datamark untrusted spans</span></li><li style="font-size:27px;line-height:1.3"><b>StruQ</b> <span style="color:var(--ink-faint)">disjoint instruction / data channels</span></li><li style="font-size:27px;line-height:1.3"><b>Boundary awareness</b> <span style="color:var(--ink-faint)">cheap first line</span></li></ul><div style="margin-top:auto;padding-top:22px"><span style="font-family:var(--mono);font-size:44px;font-weight:600;color:var(--teal)">&gt;50% → &lt;2%</span><div style="font-size:24px;color:var(--ink-faint);margin-top:4px">attack success with spotlighting</div></div></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">ARCHITECTURAL</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:16px"><li style="font-size:27px;line-height:1.3"><b>Dual-LLM</b> <span style="color:var(--ink-faint)">privileged calls tools, quarantined reads data</span></li><li style="font-size:27px;line-height:1.3"><b>IPIGuard</b> <span style="color:var(--ink-faint)">tool-dependency graph</span></li><li style="font-size:27px;line-height:1.3"><b>Task Shield</b> <span style="color:var(--ink-faint)">blocks off-task actions</span></li></ul></div>
+    </div>
+    <div style="margin-top:24px;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:20px 28px;font-family:var(--mono);font-size:24px;color:var(--ink-dim);display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span style="color:var(--ink-faint)">PIPELINE</span><span>secrets scan</span><span style="color:var(--teal)">→</span><span>PI classifier</span><span style="color:var(--teal)">→</span><span>boundary awareness</span><span style="color:var(--teal)">→</span><span>spotlighting</span><span style="color:var(--teal)">→</span><span>dual-LLM / Task Shield</span></div>
+  </div>
+</section>
+
+<section data-label="Output Rails" data-speaker-notes="Output rails validate what the agent emits across three failure modes: unsafe content, ungrounded content, malformed content. Note Constitutional Classifiers cut jailbreak success from 86% to 4.4%. And don't forget output side-channels — strip agent-emitted markdown links and images, a common exfiltration vector.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>03 &middot; Key Defenses</span><span style="color:var(--ink-faint)">09 / 18</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:24px;margin-top:12px"><h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em">Output rails</h2><span style="font-size:30px;color:var(--ink-faint)">content &middot; hallucination &middot; schema</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;flex:1;margin-top:30px">
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">CONTENT SAFETY</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:14px"><li style="font-size:27px;line-height:1.3"><b>Llama Guard 3 / 4</b> <span style="color:var(--ink-faint)">14-category, multilingual</span></li><li style="font-size:27px;line-height:1.3"><b>ShieldGemma 1 / 2</b> <span style="color:var(--ink-faint)">+ multimodal</span></li><li style="font-size:27px;line-height:1.3"><b>WildGuard, Qwen3Guard</b></li></ul><div style="margin-top:auto;padding-top:22px"><span style="font-family:var(--mono);font-size:40px;font-weight:600;color:var(--teal)">86% → 4.4%</span><div style="font-size:24px;color:var(--ink-faint);margin-top:4px">jailbreaks, Constitutional Classifiers</div></div></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">GROUNDING</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:14px"><li style="font-size:27px;line-height:1.3"><b>Galileo Luna-2</b> <span style="color:var(--ink-faint)">88% @ 152 ms</span></li><li style="font-size:27px;line-height:1.3"><b>Patronus Lynx</b> <span style="color:var(--ink-faint)">faithfulness judge</span></li><li style="font-size:27px;line-height:1.3"><b>Bedrock grounding</b> <span style="color:var(--ink-faint)">99% on verifiable claims</span></li><li style="font-size:27px;line-height:1.3"><b>RAGAS</b> <span style="color:var(--ink-faint)">runtime gates</span></li></ul></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">SCHEMA</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:14px"><li style="font-size:27px;line-height:1.3"><b>Guardrails AI</b> <span style="color:var(--ink-faint)">RAIL + reask loop</span></li><li style="font-size:27px;line-height:1.3"><b>Pydantic AI, Instructor</b></li><li style="font-size:27px;line-height:1.3"><b>Outlines, LMQL</b> <span style="color:var(--ink-faint)">constrained decoding</span></li></ul></div>
+    </div>
+    <div style="margin-top:24px;background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--amber);border-radius:6px;padding:20px 28px;font-size:27px;color:var(--ink-dim)"><b style="color:var(--ink)">Side-channel:</b> strip agent-emitted markdown links &amp; images before render &mdash; a common exfiltration vector. Block agent-authored HTML / scripts by default.</div>
+  </div>
+</section>
+
+<section data-label="Tool & Action Rails" data-speaker-notes="The highest blast radius. OWASP lists tool misuse and excessive agency as top agentic risks. Three dominant principles: least privilege, deny-by-default, and human confirmation for irreversible actions. AgentSpec prevents unsafe code execution in over 90% of cases at millisecond overhead.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>03 &middot; Key Defenses</span><span style="color:var(--ink-faint)">10 / 18</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:24px;margin-top:12px"><h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em">Tool &amp; action rails</h2><span style="font-size:30px;color:var(--amber)">highest blast radius</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:22px;flex:1;margin-top:28px">
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:28px 30px"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">LEAST PRIVILEGE</span><p style="font-size:27px;color:var(--ink-dim);line-height:1.4;margin-top:14px">OAuth 2.1 + DCR, per-request downscoped tokens, shortest TTL. Agent personas &amp; capability profiles. <b style="color:var(--ink)">MiniScope</b> &mdash; 1&ndash;6% overhead.</p></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:28px 30px"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">RUNTIME ENFORCEMENT</span><p style="font-size:27px;color:var(--ink-dim);line-height:1.4;margin-top:14px"><b style="color:var(--ink)">AgentSpec</b> &mdash; triggers/predicates, blocks &gt;90% unsafe code execution. <b style="color:var(--ink)">OPA / Rego</b> deny-by-default at every tool call.</p></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:28px 30px"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">SANDBOXING</span><p style="font-size:27px;color:var(--ink-dim);line-height:1.4;margin-top:14px">gVisor, Firecracker, Kata microVMs. Ephemeral sandboxes (E2B, Modal, Anthropic) &mdash; fresh state, scoped egress, time-bounded creds.</p></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:28px 30px"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">HUMAN-IN-THE-LOOP</span><p style="font-size:27px;color:var(--ink-dim);line-height:1.4;margin-top:14px">Risk-tiered routing: read-only runs free; write / irreversible actions gate on approve/reject. Confidence-based escalation preserves throughput.</p></div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Retrieval & Memory" data-speaker-notes="An agent's RAG index and long-term memory are persistent attack surfaces — one successful poisoning affects every future session. MINJA shows even a regular user with no system access can inject persistent memories, over 95% success. The compliance-relevant insight: moderate writes, not just reads.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>03 &middot; Key Defenses</span><span style="color:var(--ink-faint)">11 / 18</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:24px;margin-top:12px"><h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em">Retrieval &amp; memory rails</h2><span style="font-size:30px;color:var(--ink-faint)">RAG poisoning &middot; MINJA</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:30px">
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:30px 28px"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">WRITE-PATH HYGIENE</span><p style="font-size:26px;color:var(--ink-dim);line-height:1.4;margin-top:14px">Moderate everything before indexing. Source provenance &amp; signing. Author / tenant isolation. Semantic gate on memory writes.</p></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:30px 28px"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">RETRIEVAL-TIME</span><p style="font-size:26px;color:var(--ink-dim);line-height:1.4;margin-top:14px">NeMo retrieval rails reject / rewrite chunks. Activation-based detectors (RevPRAG). Isolate-then-aggregate. Source-aware citation.</p></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:30px 28px"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">MEMORY ARCHITECTURE</span><p style="font-size:26px;color:var(--ink-dim);line-height:1.4;margin-top:14px">Separate episodic / semantic / procedural with different write policies. Bounded horizon. Write requires inspectable reasoning step.</p></div>
+    </div>
+    <div style="display:grid;grid-template-columns:0.9fr 1.6fr;gap:24px;margin-top:24px;flex:1">
+      <div style="background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:30px 32px;display:flex;flex-direction:column;justify-content:center"><span style="font-family:var(--mono);font-size:64px;font-weight:600;color:var(--amber)">&gt;95%</span><span style="font-size:26px;color:var(--ink-dim);margin-top:8px;line-height:1.35">MINJA memory-injection success &mdash; by a <b style="color:var(--ink)">regular user</b>, no system access</span></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--amber);border-radius:6px;padding:30px 34px;display:flex;flex-direction:column;justify-content:center"><span style="font-size:32px;font-weight:600;line-height:1.3">Memory poisoning is the silent failure.</span><span style="font-size:27px;color:var(--ink-dim);margin-top:12px;line-height:1.4">Unlike a jailbreak, it triggers no alert today and ruins behavior next quarter. Moderate writes, not just reads.</span></div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Info Flow Control" data-speaker-notes="The most ambitious defenses. Instead of detecting bad content, they make it structurally impossible for untrusted data to influence sensitive operations — borrowed from secure-OS research. CaMeL from DeepMind, FIDES from Microsoft. The key: even a fully jailbroken quarantined LLM cannot reach a forbidden sink.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>03 &middot; Key Defenses</span><span style="color:var(--ink-faint)">12 / 18</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:24px;margin-top:12px"><h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em">Information flow control</h2><span style="font-size:30px;color:var(--ink-faint)">CaMeL &middot; FIDES &middot; dual-LLM</span></div>
+    <p style="font-size:29px;color:var(--ink-dim);margin-top:18px;max-width:1400px;line-height:1.4">Don't detect bad content &mdash; make it <span style="color:var(--ink)">structurally impossible</span> for untrusted data to influence sensitive operations. Taint tracking for agents.</p>
+    <div style="display:flex;align-items:stretch;gap:18px;margin-top:30px;flex:1">
+      <div style="flex:1;background:var(--bg-2);border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:6px;padding:30px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">P-LLM &middot; PRIVILEGED</span><p style="font-size:28px;line-height:1.35;margin-top:14px">Sees only the trusted user query. Plans the program and calls tools. <b>Never sees untrusted data.</b></p></div>
+      <div style="display:flex;align-items:center;font-family:var(--mono);font-size:40px;color:var(--ink-faint)">×</div>
+      <div style="flex:1;background:var(--bg-2);border:1px solid var(--line);border-top:3px solid var(--amber);border-radius:6px;padding:30px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">Q-LLM &middot; QUARANTINED</span><p style="font-size:28px;line-height:1.35;margin-top:14px">Sees untrusted text (email, web). Returns only typed, structured objects. <b>Cannot call tools.</b></p></div>
+      <div style="display:flex;align-items:center;font-family:var(--mono);font-size:40px;color:var(--ink-faint)">×</div>
+      <div style="flex:1;background:var(--bg-2);border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:6px;padding:30px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">CAPABILITY INTERPRETER</span><p style="font-size:28px;line-height:1.35;margin-top:14px">Every value carries provenance metadata. Policy decides whether a tool may run with values of that origin.</p></div>
+    </div>
+    <div style="margin-top:24px;background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--teal);border-radius:6px;padding:22px 30px;font-size:28px;color:var(--ink-dim);line-height:1.4"><b style="color:var(--ink)">Net effect:</b> even a fully jailbroken Q-LLM can't reach a forbidden sink &mdash; converts a probabilistic problem into a structural one. <span style="color:var(--ink-faint)">Cost: complexity + reduced utility.</span></div>
+  </div>
+</section>
+
+<section data-label="Products Landscape" data-speaker-notes="The vendor landscape as of mid-2026, grouped by where they sit. Open-source for self-hosting, managed cloud if you're already on a hyperscaler, commercial for specialized detection, and a distinct identity/authorization layer that's easy to overlook. Most mature stacks combine several.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>03 &middot; Key Defenses</span><span style="color:var(--ink-faint)">13 / 18</span>
+    </div>
+    <h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em;margin-top:12px">The products &amp; frameworks landscape</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;flex:1;margin-top:30px">
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:28px 24px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">OPEN SOURCE</span><ul style="list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:14px;font-size:27px"><li>NeMo Guardrails</li><li>Guardrails AI</li><li>LLM Guard</li><li>Vigil / Rebuff</li><li style="color:var(--ink-faint);font-size:24px">OpenAI Guardrails</li></ul></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:28px 24px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">MANAGED CLOUD</span><ul style="list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:14px;font-size:27px"><li>Bedrock Guardrails</li><li>Azure Content Safety</li><li>Vertex AI / SAIF</li></ul></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:6px;padding:28px 24px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">COMMERCIAL</span><ul style="list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:14px;font-size:27px"><li>Lakera Guard</li><li>Galileo &middot; Patronus</li><li>GraySwan Cygnal</li><li>CrowdStrike AIDR</li><li style="color:var(--ink-faint);font-size:24px">Enkrypt &middot; NeuralTrust</li></ul></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line-soft);border-top:3px solid var(--amber);border-radius:6px;padding:28px 24px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">IDENTITY / AUTHZ</span><ul style="list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:14px;font-size:27px"><li>Cerbos &middot; OPA / Rego</li><li>WorkOS &middot; Cequence</li><li>Strata &middot; Gravitee</li></ul><span style="font-size:24px;color:var(--ink-faint);margin-top:auto;padding-top:16px;line-height:1.3">The layer teams forget</span></div>
+    </div>
+  </div>
+</section>
+
+<section data-label="§ Operating" data-speaker-notes="Second section divider. From the menu of defenses to operating the stack as a system — architecture, evaluation, and rollout.">
+  <div style="height:100%;box-sizing:border-box;padding:90px 110px;background:var(--bg-2);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden">
+    <div style="position:absolute;left:0;top:0;width:8px;height:100%;background:var(--teal)"></div>
+    <span style="font-family:var(--mono);font-size:200px;font-weight:600;color:var(--line);line-height:0.8">02</span>
+    <h2 style="font-size:84px;font-weight:700;letter-spacing:-0.02em;margin-top:24px">Operating the stack</h2>
+    <p style="font-size:32px;color:var(--ink-dim);margin-top:24px;max-width:980px;line-height:1.4">A reference architecture, the metrics that prove it works, and a sequenced rollout.</p>
+  </div>
+</section>
+
+<section data-label="Reference Architecture" data-speaker-notes="What most mature production stacks look like in 2026 — names vary, topology doesn't. Six rail layers from input to output, each with a latency budget, wrapped in cross-cutting observability. The append-only audit log on the right is your SOC 2 and EU AI Act evidence.">
+  <div style="height:100%;box-sizing:border-box;padding:74px 90px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>04 &middot; Operating the Stack</span><span style="color:var(--ink-faint)">15 / 18</span>
+    </div>
+    <h2 style="font-size:50px;font-weight:600;letter-spacing:-0.02em;margin-top:10px">Reference defense-in-depth architecture</h2>
+    <div style="display:grid;grid-template-columns:1.95fr 1fr;gap:24px;flex:1;margin-top:22px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:13px 22px;flex:1"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);min-width:42px">L1</span><span style="font-size:26px;font-weight:600;min-width:230px">Input rails</span><span style="font-size:24px;color:var(--ink-dim);flex:1">secrets scrub &middot; PI/jailbreak &middot; PII &middot; spotlighting</span><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">&lt;30 ms</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:13px 22px;flex:1"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);min-width:42px">L2</span><span style="font-size:26px;font-weight:600;min-width:230px">Dialog / topic</span><span style="font-size:24px;color:var(--ink-dim);flex:1">Colang flows &middot; off-topic redirect &middot; SOPs</span><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">50&ndash;200 ms</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:13px 22px;flex:1"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);min-width:42px">L3</span><span style="font-size:26px;font-weight:600;min-width:230px">Reasoning</span><span style="font-size:24px;color:var(--ink-dim);flex:1">dual-LLM &middot; Q-LLM typed parse &middot; Task-Shield</span><span style="font-family:var(--mono);font-size:24px;color:var(--ink-faint)">&mdash;</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:13px 22px;flex:1"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);min-width:42px">L4</span><span style="font-size:26px;font-weight:600;min-width:230px">Retrieval &amp; memory</span><span style="font-size:24px;color:var(--ink-dim);flex:1">provenance labels &middot; write-time moderation</span><span style="font-family:var(--mono);font-size:24px;color:var(--ink-faint)">&mdash;</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:13px 22px;flex:1"><span style="font-family:var(--mono);font-size:24px;color:var(--amber);min-width:42px">L5</span><span style="font-size:26px;font-weight:600;min-width:230px">Tool / action</span><span style="font-size:24px;color:var(--ink-dim);flex:1">OAuth 2.1 &middot; OPA deny-default &middot; HITL &middot; sandbox</span><span style="font-family:var(--mono);font-size:24px;color:var(--ink-faint)">gate</span></div>
+        <div style="display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:13px 22px;flex:1"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);min-width:42px">L6</span><span style="font-size:26px;font-weight:600;min-width:230px">Output rails</span><span style="font-size:24px;color:var(--ink-dim);flex:1">schema + reask &middot; content class &middot; grounding &middot; redact</span><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">&lt;50 ms</span></div>
+      </div>
+      <div style="background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:30px 30px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.1em">OBSERVABILITY</span><span style="font-size:25px;color:var(--ink-faint);margin-top:4px">cross-cutting</span><ul style="list-style:none;margin-top:22px;display:flex;flex-direction:column;gap:18px;font-size:26px;line-height:1.3"><li>OpenTelemetry traces of every rail decision</li><li>Langfuse / Arize evaluation harness</li><li>Per-rail metrics: ASR, FPR, latency</li><li style="border-top:1px solid var(--line-soft);padding-top:18px"><b>Append-only audit log</b><br><span style="color:var(--ink-faint);font-size:24px">SOC 2 / EU AI Act evidence</span></li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Evaluation" data-speaker-notes="Guardrails fail in two directions — too loose (harm passes) and too strict (legitimate requests blocked). A single mixed F1 hides which one you have, so evaluation must be split. Run AgentDojo and a domain set in CI, and always test against an adaptive attacker who knows your defense.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>04 &middot; Operating the Stack</span><span style="color:var(--ink-faint)">16 / 18</span>
+    </div>
+    <h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em;margin-top:12px">Evaluation &amp; benchmarks</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:36px;flex:1;margin-top:30px">
+      <div style="display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.1em">SECURITY BENCHMARKS</span><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:22px">
+        <span style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:14px 18px;font-size:26px"><b>AgentDojo</b> <span style="color:var(--ink-faint);font-family:var(--mono);font-size:24px">629 cases</span></span>
+        <span style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:14px 18px;font-size:26px">InjecAgent</span>
+        <span style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:14px 18px;font-size:26px">Agent Security Bench</span>
+        <span style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:14px 18px;font-size:26px">AgentHarm</span>
+        <span style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:14px 18px;font-size:26px">WASP <span style="color:var(--ink-faint);font-family:var(--mono);font-size:24px">web</span></span>
+        <span style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:14px 18px;font-size:26px">AgentDyn <span style="color:var(--ink-faint);font-family:var(--mono);font-size:24px">2026</span></span>
+        <span style="background:var(--bg-2);border:1px solid var(--line-soft);border-radius:4px;padding:14px 18px;font-size:26px">R-Judge</span>
+      </div></div>
+      <div style="display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.1em">METRICS TO TRACK</span><ul style="list-style:none;margin-top:22px;display:flex;flex-direction:column;gap:14px;font-size:27px;line-height:1.3">
+        <li><span style="font-family:var(--mono);color:var(--teal)">›</span> Attack Success Rate, by attack class</li>
+        <li><span style="font-family:var(--mono);color:var(--teal)">›</span> Utility-under-attack &mdash; task completion while attacked</li>
+        <li><span style="font-family:var(--mono);color:var(--teal)">›</span> False-positive / over-refusal rate</li>
+        <li><span style="font-family:var(--mono);color:var(--teal)">›</span> Per-layer latency budget</li>
+        <li><span style="font-family:var(--mono);color:var(--teal)">›</span> Groundedness rate vs reference store</li>
+        <li><span style="font-family:var(--mono);color:var(--teal)">›</span> Policy-violation count + audit completeness</li>
+      </ul></div>
+    </div>
+    <div style="margin-top:24px;background:var(--bg-2);border:1px solid var(--line-soft);border-left:3px solid var(--amber);border-radius:6px;padding:22px 30px;font-size:28px;color:var(--ink-dim);line-height:1.4">Guardrails fail <b style="color:var(--ink)">too loose</b> and <b style="color:var(--ink)">too strict</b> &mdash; a single mixed F1 hides which. Split the eval, and always test an adaptive attacker who knows your defense.</div>
+  </div>
+</section>
+
+<section data-label="Roadmap" data-speaker-notes="A sequenced rollout. Weeks 1–2: a single PI classifier, schema validation, HITL on irreversible tools, a managed content classifier, and trace everything. Weeks 3–6: dialog rails, spotlighting, policy-engine authorization, retrieval rails, an eval harness. High-stakes: information flow control, custom classifiers, continuous red-teaming, governance plumbing.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.16em;text-transform:uppercase">
+      <span>04 &middot; Operating the Stack</span><span style="color:var(--ink-faint)">17 / 18</span>
+    </div>
+    <h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em;margin-top:12px">The implementation roadmap</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;flex:1;margin-top:30px">
+      <div style="background:var(--bg-2);border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">WEEK 1&ndash;2 &middot; FOUNDATION</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:16px;font-size:26px;line-height:1.3"><li>One PI / jailbreak classifier in front of every call</li><li>Schema validation on all tool args &amp; outputs</li><li>HITL on irreversible tools (denylist)</li><li>Managed content classifier on outputs</li><li>Log every rail decision (OpenTelemetry)</li></ul></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--teal)">WEEK 3&ndash;6 &middot; LAYER IN</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:16px;font-size:26px;line-height:1.3"><li>NeMo (or equivalent) dialog + execution rails</li><li>Spotlighting on every retrieved / tool span</li><li>Policy-engine authz, deny-by-default tokens</li><li>Retrieval rails &amp; write-time moderation</li><li>Eval harness: AgentDojo + domain set</li></ul></div>
+      <div style="background:var(--bg-2);border:1px solid var(--line);border-top:3px solid var(--amber);border-radius:6px;padding:32px 28px;display:flex;flex-direction:column"><span style="font-family:var(--mono);font-size:24px;color:var(--amber)">HIGH-STAKES &middot; INVEST</span><ul style="list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:16px;font-size:26px;line-height:1.3"><li>Dual-LLM / CaMeL information flow control</li><li>Custom classifiers from your written policy</li><li>Continuous + human red-teaming in CI</li><li>Adaptive-attack evaluations</li><li>Audit &amp; governance plumbing</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Takeaways" data-speaker-notes="Close on the failure modes that recur — over-blocking, defense flattening over long context, single-classifier dependence, the MCP supply chain, latency creep, and silent memory poisoning. Leave them with the three durable principles: layer defenses, treat external content as untrusted, and log everything.">
+  <div style="height:100%;box-sizing:border-box;padding:84px 100px;background:var(--bg-2);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden;position:relative">
+    <div style="position:absolute;left:0;top:0;width:8px;height:100%;background:var(--amber)"></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:24px;color:var(--amber);letter-spacing:0.16em;text-transform:uppercase">
+      <span>Closing</span><span style="color:var(--ink-faint)">18 / 18</span>
+    </div>
+    <h2 style="font-size:56px;font-weight:600;letter-spacing:-0.02em;margin-top:12px">Failure modes &amp; takeaways</h2>
+    <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:44px;flex:1;margin-top:30px">
+      <div><span style="font-family:var(--mono);font-size:24px;color:var(--amber);letter-spacing:0.1em">WATCH FOR</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px">
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:4px;padding:18px 20px;font-size:26px;line-height:1.25">Over-blocking benign users</div>
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:4px;padding:18px 20px;font-size:26px;line-height:1.25">Defense flattening over long context</div>
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:4px;padding:18px 20px;font-size:26px;line-height:1.25">Single-classifier dependence</div>
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:4px;padding:18px 20px;font-size:26px;line-height:1.25">Skill / MCP supply chain</div>
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:4px;padding:18px 20px;font-size:26px;line-height:1.25">Latency-budget creep</div>
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:4px;padding:18px 20px;font-size:26px;line-height:1.25">Silent memory poisoning</div>
+      </div></div>
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:22px"><span style="font-family:var(--mono);font-size:24px;color:var(--teal);letter-spacing:0.1em">THE DURABLE PRINCIPLES</span>
+        <div style="display:flex;gap:18px;align-items:baseline"><span style="font-family:var(--mono);font-size:32px;color:var(--teal)">01</span><span style="font-size:31px;line-height:1.3;font-weight:500">Layer defenses &mdash; no single check is sufficient</span></div>
+        <div style="display:flex;gap:18px;align-items:baseline"><span style="font-family:var(--mono);font-size:32px;color:var(--teal)">02</span><span style="font-size:31px;line-height:1.3;font-weight:500">Treat all external content as untrusted</span></div>
+        <div style="display:flex;gap:18px;align-items:baseline"><span style="font-family:var(--mono);font-size:32px;color:var(--teal)">03</span><span style="font-size:31px;line-height:1.3;font-weight:500">Log every decision &mdash; without traces you can't iterate or prove compliance</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="ALT · Title B" data-speaker-notes="Alternate cover treatment B — terminal / command-line motif. Pick one cover and delete the others.">
+  <div style="height:100%;box-sizing:border-box;padding:90px 110px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;overflow:hidden">
+    <div style="width:1180px;max-width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,0.4)">
+      <div style="display:flex;align-items:center;gap:10px;padding:18px 24px;border-bottom:1px solid var(--line-soft);background:oklch(0.19 0.02 255)"><span style="width:14px;height:14px;border-radius:50%;background:var(--amber)"></span><span style="width:14px;height:14px;border-radius:50%;background:var(--line)"></span><span style="width:14px;height:14px;border-radius:50%;background:var(--teal)"></span><span style="font-family:var(--mono);font-size:24px;color:var(--ink-faint);margin-left:16px">guardrails — runtime control plane</span></div>
+      <div style="padding:60px 64px;text-align:left">
+        <div style="font-family:var(--mono);font-size:26px;color:var(--teal)">$ agent.secure --policy=defense-in-depth</div>
+        <h1 style="font-size:84px;font-weight:700;letter-spacing:-0.03em;line-height:1.0;margin-top:28px">AI Agent Guardrails</h1>
+        <p style="font-family:var(--mono);font-size:28px;color:var(--ink-dim);margin-top:26px;line-height:1.5"><span style="color:var(--teal)">›</span> 7 control layers &middot; products &amp; frameworks &middot; reference architecture<span style="color:var(--teal);animation:blink 1.1s step-end infinite">█</span></p>
+      </div>
+    </div>
+    <div style="font-family:var(--mono);font-size:24px;color:var(--ink-faint);letter-spacing:0.2em;margin-top:40px">A PRACTITIONER'S REFERENCE &middot; 2023&ndash;2026</div>
+  </div>
+</section>
+
+<section data-label="ALT · Title C" data-speaker-notes="Alternate cover treatment C — teal accent block, editorial. Pick one cover and delete the others.">
+  <div style="height:100%;box-sizing:border-box;background:var(--bg);color:var(--ink);font-family:var(--sans);display:grid;grid-template-columns:1fr 1.55fr;overflow:hidden">
+    <div style="background:var(--teal);color:oklch(0.18 0.02 255);padding:90px 70px;display:flex;flex-direction:column;justify-content:space-between"><span style="font-family:var(--mono);font-size:24px;letter-spacing:0.18em">[ STATUS:<br>UNTRUSTED ]</span><div style="font-family:var(--mono);font-size:26px;line-height:1.9;font-weight:500"><div>OWASP</div><div>NIST</div><div>MITRE ATLAS</div><div>CSA MAESTRO</div><div>EU AI ACT</div></div><span style="font-family:var(--mono);font-size:24px;letter-spacing:0.16em">2023&ndash;2026</span></div>
+    <div style="padding:96px 88px;display:flex;flex-direction:column;justify-content:center"><span style="font-family:var(--mono);font-size:24px;letter-spacing:0.2em;color:var(--teal);text-transform:uppercase">A Practitioner's Reference</span><h1 style="font-size:104px;font-weight:700;letter-spacing:-0.03em;line-height:0.98;margin-top:30px">AI Agent<br>Guardrails</h1><p style="font-size:34px;color:var(--ink-dim);margin-top:34px;max-width:640px;line-height:1.4">The runtime control plane for production agent systems &mdash; organized by control layer.</p></div>
+  </div>
+</section>
+
+<section data-label="ALT · Section B" data-speaker-notes="Alternate section-divider treatment B — right-aligned, amber accent, full-bleed. Apply this style to dividers if preferred over the current one.">
+  <div style="height:100%;box-sizing:border-box;padding:90px 110px;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;text-align:right;position:relative;overflow:hidden">
+    <div style="position:absolute;right:0;top:0;width:8px;height:100%;background:var(--amber)"></div>
+    <div style="position:absolute;left:110px;top:120px;font-family:var(--mono);font-size:24px;color:var(--ink-faint);letter-spacing:0.2em">SECTION</div>
+    <span style="font-family:var(--mono);font-size:240px;font-weight:600;color:var(--amber);line-height:0.78;opacity:0.9">02</span>
+    <h2 style="font-size:88px;font-weight:700;letter-spacing:-0.02em;margin-top:18px">Operating the stack</h2>
+    <p style="font-size:32px;color:var(--ink-dim);margin-top:22px;max-width:900px;line-height:1.4">A reference architecture, the metrics that prove it works, and a sequenced rollout.</p>
+  </div>
+</section>
+
+</x-import>
+</x-dc>
+</body>
+</html>

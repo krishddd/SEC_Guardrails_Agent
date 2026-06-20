@@ -1,0 +1,43 @@
+name: Weekly Security Audit
+
+on:
+  schedule:
+    - cron: "0 9 * * MON"
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install audit tooling + Claude Code
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          npm install -g @anthropic-ai/claude-code
+
+      - name: Dependency CVE scan (report-only)
+        run: pip-audit --format json --output pip-audit.json || true
+
+      - name: Claude security sweep (report-only)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude -p "Audit this guardrail codebase for known CVEs in dependencies \
+          and unsafe patterns (rails that can fail open, untrusted data reaching a \
+          tool/sink without a taint check, secrets in code). Report only, do not fix." \
+          --allowedTools "Read,Grep,Bash(pip-audit:*)" \
+          --output-format json > audit-report.json || true
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: |
+            audit-report.json
+            pip-audit.json
