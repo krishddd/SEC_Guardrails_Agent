@@ -22,7 +22,7 @@ dependencies = [
 ml = ["transformers>=4.40", "torch>=2.2", "presidio-analyzer>=2.2.362"]
 mistral = ["mistralai>=1.0"]
 otel = ["opentelemetry-sdk>=1.25", "opentelemetry-api>=1.25"]
-dev = ["pytest>=8", "ruff>=0.5"]
+dev = ["pytest>=8", "ruff>=0.5", "opentelemetry-sdk>=1.25", "opentelemetry-api>=1.25"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

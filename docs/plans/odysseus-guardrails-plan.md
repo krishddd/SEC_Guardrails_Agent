@@ -25,17 +25,17 @@
 ## Phase 0 — Foundations
 - [ ] **T1 — Rotate OPENAI_API_KEY (FIRST).** Rotate the reused key; document in `.env.example` notes.
   **Done:** old key invalidated, new key in local `.env` (untracked), nothing reads a hardcoded key.
-- [ ] **T2 — Config + secrets loader** (`src/core/config.py`). Resolve `ODYSSEUS_BASE_URL`,
+- [x] **T2 — Config + secrets loader** (`src/core/config.py`). Resolve `ODYSSEUS_BASE_URL`,
   `ODYSSEUS_TOKEN`, `OPENAI_API_KEY`, `MISTRAL_API_KEY` from env + configurable fallback path.
   **Done:** unit test (monkeypatched env) resolves all; missing `ODYSSEUS_TOKEN` raises a clear error.
-- [ ] **T3 — Odysseus client** (`src/gateway/odysseus_client.py`). `/api/v1/chat`, `/api/health`,
+- [x] **T3 — Odysseus client** (`src/gateway/odysseus_client.py`). `/api/v1/chat`, `/api/health`,
   header auth, **4xx terminal / 5xx+network retry**. **Done:** health green vs stub; retry-policy unit tests.
-- [ ] **T4 — Rail framework** (`src/core/rail.py`). `Rail.inspect(ctx)->Decision{allow|block|modify,reason}`,
+- [x] **T4 — Rail framework** (`src/core/rail.py`). `Rail.inspect(ctx)->Decision{allow|block|modify,reason}`,
   ordered `RailChain` (short-circuit on block), `RailContext` (source, trust label, taint set).
   **Done:** unit test proves short-circuit + records the blocking rail. *(blocks all rail tasks)*
-- [ ] **T5 — Gateway skeleton** (`src/gateway/app.py`). FastAPI `:7100` proxying `/api/v1/chat` → `:7000`,
+- [x] **T5 — Gateway skeleton** (`src/gateway/app.py`). FastAPI `:7100` proxying `/api/v1/chat` → `:7000`,
   no rails yet. **Done:** response through gateway == direct (vs stub). *(needs T3)*
-- [ ] **T6 — Observability + audit** (`src/core/audit.py`, `src/core/otel.py`). Per-request trace id;
+- [x] **T6 — Observability + audit** (`src/core/audit.py`, `src/core/otel.py`). Per-request trace id;
   OTel span + append-only JSONL audit per decision. **Done:** one pass-through call → exactly one span +
   one audit record. *(needs T5)*
 - [ ] **T6b — Rust core crate (ADR-0006)** (`crates/guardrails-core/`, PyO3/maturin → `guardrails_core`).
