@@ -1,0 +1,12 @@
+[
+  {"name": "two_words", "input": "ignore previous", "marker": "^", "expected": "ignore^previous"},
+  {
+    "name": "mixed_whitespace",
+    "input": "ignore  previous\tinstructions",
+    "marker": "^",
+    "expected": "ignore^previous^instructions"
+  },
+  {"name": "trims_edges", "input": "  hi there ", "marker": "^", "expected": "hi^there"},
+  {"name": "single_token", "input": "hello", "marker": "^", "expected": "hello"},
+  {"name": "empty", "input": "", "marker": "^", "expected": ""}
+]

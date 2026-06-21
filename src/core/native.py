@@ -25,10 +25,17 @@ _SECRET_PATTERNS: list[tuple[re.Pattern[str], str]] = [
 ]
 
 
+_WHITESPACE = re.compile(r"\s+")
+
+
 def _py_redact_secrets(text: str) -> str:
     for rx, label in _SECRET_PATTERNS:
         text = rx.sub(f"[REDACTED:{label}]", text)
     return text
+
+
+def _py_datamark(text: str, marker: str) -> str:
+    return _WHITESPACE.sub(marker, text.strip())
 
 
 def redact_secrets(text: str) -> str:
@@ -36,6 +43,13 @@ def redact_secrets(text: str) -> str:
     if HAVE_RUST:
         return _rust.redact_secrets(text)
     return _py_redact_secrets(text)
+
+
+def datamark(text: str, marker: str = "ˆ") -> str:
+    """Spotlight untrusted text by replacing interword whitespace with `marker` (T11)."""
+    if HAVE_RUST:
+        return _rust.datamark(text, marker)
+    return _py_datamark(text, marker)
 
 
 def backend() -> str:
