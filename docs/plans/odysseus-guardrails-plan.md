@@ -84,12 +84,12 @@
 - [ ] **T20 — Trace-export hook in Odysseus** (`odysseus/src/tool_execution.py`, read-only; ADR-0005).
   Emit normalized tool-call events to the gateway. **Done:** stub/live tool call produces a trace event
   the gateway receives; Odysseus behaviour unchanged. *(pins OQ3 schema)*
-- [ ] **T21 — In-house policy DSL (Rust-backed, ADR-0006/0004)** (parser+evaluator in
+- [x] **T21 — In-house policy DSL (Rust-backed, ADR-0006/0004)** (parser+evaluator in
   `crates/guardrails-core/` + `src/rails/tool/policy.py` wrapper; Python fallback). Deny-by-default over a
   normalized `ToolCall`. **Done:** `bash`/`api_call` blocked unless policy allows; decision logged w/
   policy id; Rust + fallback agree on the policy vectors. *(needs T6b; the Rust parser is the highest-value
   memory-safety target — see T22)*
-- [ ] **T22 — DSL adversarial hardening (ADR-0004 gate).** Adversarial bypass test set (encoding, arg
+- [x] **T22 — DSL adversarial hardening (ADR-0004 gate).** Adversarial bypass test set (encoding, arg
   smuggling, fail-open) + `security-reviewer` pass. **Done:** all bypass tests blocked; review clean.
   *(blocks T23)*
 - [ ] **T23 — HITL on irreversible tools** (`src/rails/tool/hitl.py`, risk-tiered; gateway-mediated
