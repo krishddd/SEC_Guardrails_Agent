@@ -98,9 +98,9 @@
   `Security_module/core/ssrf_guard.py` patterns). **Done:** internal-target/exfil URL blocked; allowlisted passes.
 
 ## Phase 5 — Retrieval/memory rails (L5) — active via hook
-- [ ] **T25 — Write-time moderation + provenance** (`src/rails/memory/write_guard.py`). **Done:**
+- [x] **T25 — Write-time moderation + provenance** (`src/rails/memory/write_guard.py`). **Done:**
   poisoned memory (ASI06/ext14 payload) blocked at write; provenance/trust label recorded.
-- [ ] **T26 — Tenant isolation + retrieval validators** (`src/rails/memory/retrieval.py`). Trust/freshness
+- [x] **T26 — Tenant isolation + retrieval validators** (`src/rails/memory/retrieval.py`). Trust/freshness
   threshold, PII mask, cross-tenant block. **Done:** cross-tenant read blocked; low-trust chunk dropped.
 
 ## Phase 6 — Reasoning/IFC + multi-agent + oversight
