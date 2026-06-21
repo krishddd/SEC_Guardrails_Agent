@@ -1,0 +1,18 @@
+{
+  "version": "1",
+  "refusal": "I can't help with that topic.",
+  "denied_topics": [
+    {
+      "name": "weapons",
+      "pattern": "\\b(?:build|make|create|construct)\\b.{0,30}\\b(?:bomb|explosive|weapon|firearm)\\b"
+    },
+    {
+      "name": "malware",
+      "pattern": "\\b(?:write|create|generate|code)\\b.{0,25}\\b(?:malware|ransomware|keylogger|virus|trojan)\\b"
+    },
+    {
+      "name": "self_harm",
+      "pattern": "\\bhow to\\b.{0,20}\\b(?:harm myself|hurt myself|kill myself|commit suicide)\\b"
+    }
+  ]
+}

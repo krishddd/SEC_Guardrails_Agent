@@ -62,9 +62,9 @@
   *(needs T9)*
 
 ## Phase 2 — Dialog rails (L2)
-- [ ] **T13 — Task-Shield off-task detector** (`src/rails/dialog/task_shield.py`). Allowed-task envelope.
+- [x] **T13 — Task-Shield off-task detector** (`src/rails/dialog/task_shield.py`). Allowed-task envelope.
   **Done:** off-task request blocked w/ refusal template; on-task passes. *(needs T4)*
-- [ ] **T14 — Deny-by-default topic policy** (`src/rails/dialog/topics.py`, versioned policy file).
+- [x] **T14 — Deny-by-default topic policy** (`src/rails/dialog/topics.py`, versioned policy file).
   **Done:** denied topic blocked, allowed passes.
 
 ## Phase 3 — Output rails (L6)
