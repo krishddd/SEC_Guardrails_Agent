@@ -32,7 +32,9 @@ fn host_of(url: &str) -> String {
     if let Some(i) = u.find('@') {
         u = &u[i + 1..];
     }
-    let end = u.find(|c| matches!(c, '/' | '?' | '#' | ':')).unwrap_or(u.len());
+    let end = u
+        .find(|c| matches!(c, '/' | '?' | '#' | ':'))
+        .unwrap_or(u.len());
     u[..end].to_lowercase()
 }
 
@@ -46,7 +48,10 @@ pub fn sanitize_markup(text: &str, allow_hosts: &[String]) -> String {
             let label = &c[1];
             let url = &c[2];
             let host = host_of(url);
-            if allow_hosts.iter().any(|a| a.eq_ignore_ascii_case(host.as_str())) {
+            if allow_hosts
+                .iter()
+                .any(|a| a.eq_ignore_ascii_case(host.as_str()))
+            {
                 format!("[{label}]({url})")
             } else {
                 label.to_string()
@@ -72,11 +77,17 @@ mod tests {
     #[test]
     fn keeps_allowlisted_link() {
         let allow = vec!["good.com".to_string()];
-        assert_eq!(sanitize_markup("[d](https://good.com/p)", &allow), "[d](https://good.com/p)");
+        assert_eq!(
+            sanitize_markup("[d](https://good.com/p)", &allow),
+            "[d](https://good.com/p)"
+        );
     }
 
     #[test]
     fn strips_html() {
-        assert_eq!(sanitize_markup("<script>x()</script>hi<b>!</b>", &[]), "hi!");
+        assert_eq!(
+            sanitize_markup("<script>x()</script>hi<b>!</b>", &[]),
+            "hi!"
+        );
     }
 }
