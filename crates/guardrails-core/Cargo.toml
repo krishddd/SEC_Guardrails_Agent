@@ -14,5 +14,7 @@ crate-type = ["cdylib", "rlib"]
 pyo3 = { version = "0.24", features = ["abi3-py311"] }
 regex = "1"
 
-# maturin auto-enables pyo3/extension-module when building the wheel; we keep it OUT of the
-# default features so `cargo test`/`clippy` link libpython and run normally.
+[features]
+# Opt-in so `cargo test`/`clippy` link libpython and run normally, while the wheel build
+# (`maturin build --features extension-module`) activates it for manylinux compliance.
+extension-module = ["pyo3/extension-module"]

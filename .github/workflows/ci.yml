@@ -72,7 +72,7 @@ jobs:
         if: steps.gate.outputs.go == 'true'
         run: |
           python -m pip install --upgrade pip maturin pytest
-          maturin build -m crates/guardrails-core/Cargo.toml --release -o dist
+          maturin build -m crates/guardrails-core/Cargo.toml --release --features extension-module -o dist
           pip install dist/*.whl
           python -c "import guardrails_core; print('guardrails_core', guardrails_core.version())"
           pytest -q tests/test_secrets_rail.py
