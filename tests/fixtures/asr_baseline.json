@@ -3,5 +3,9 @@
   "prompt_injection_heuristic": {
     "asr_max": 0.10,
     "fpr_max": 0.10
+  },
+  "content_heuristic": {
+    "asr_max": 0.10,
+    "fpr_max": 0.10
   }
 }
