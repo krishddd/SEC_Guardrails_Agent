@@ -35,3 +35,8 @@ Thumbs.db
 # Rust build artifacts
 target/
 crates/**/target/
+
+# Node
+node_modules/
+web/node_modules/
+web/package-lock.json

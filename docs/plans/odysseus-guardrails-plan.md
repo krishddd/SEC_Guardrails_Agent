@@ -135,10 +135,10 @@
 - [x] **T38 — Gateway UI API** (`src/gateway/ui_api.py`). Minimal authenticated JSON API: list pending
   approvals, post approve/reject, read audit log + eval reports. Treat all input as untrusted; rate-limit.
   **Done:** endpoints unit-tested; default-deny on unknown/expired approval id. *(needs T6, T23)*
-- [ ] **T39 — HITL approval app** (`web/` — pending-approval view rendering `ToolCall` + provenance/taint;
+- [x] **T39 — HITL approval app** (`web/` — pending-approval view rendering `ToolCall` + provenance/taint;
   approve/reject; default-deny on timeout). **Done:** vitest covers approve, reject, timeout-deny; no
   security logic client-side. *(needs T38)*
-- [ ] **T40 — Observability/audit dashboard + sanitizer harness** (`web/`). ASR/FPR split, latency
+- [x] **T40 — Observability/audit dashboard + sanitizer harness** (`web/`). ASR/FPR split, latency
   budgets, block reasons, NIST/EU-AI-Act control-map view; plus a DOM visual-regression harness for the
   T18 sanitizer. **Done:** dashboard renders from sample audit/eval data; sanitizer harness proves a
   data-bearing image/link is stripped in a real DOM. *(needs T18, T36)*
