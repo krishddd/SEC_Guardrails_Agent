@@ -38,7 +38,7 @@
 - [x] **T6 — Observability + audit** (`src/core/audit.py`, `src/core/otel.py`). Per-request trace id;
   OTel span + append-only JSONL audit per decision. **Done:** one pass-through call → exactly one span +
   one audit record. *(needs T5)*
-- [ ] **T6b — Rust core crate (ADR-0006)** (`crates/guardrails-core/`, PyO3/maturin → `guardrails_core`).
+- [x] **T6b — Rust core crate (ADR-0006)** (`crates/guardrails-core/`, PyO3/maturin → `guardrails_core`).
   Build skeleton + one trivial exported fn + the shared `tests/vectors/` harness wired to both the Rust
   ext and a Python fallback shim. **Done:** `maturin develop` builds; `import guardrails_core` works;
   the dual-backend test harness runs green. *(blocks T8, T11, T18, T21)*
@@ -46,7 +46,7 @@
 ## Phase 1 — Input rails (L1) + early regression gate
 - [ ] **T7 — Latency spike (FIRST in P1).** Bench deberta-v3 + Presidio + secrets-scrub together on the
   host. **Done:** measured warmed p50 recorded in `docs/architecture/`; if >30ms, revise spec SC3 now.
-- [ ] **T8 — Secrets/regex scrubber (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
+- [x] **T8 — Secrets/regex scrubber (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
   `src/rails/input/secrets.py` wrapper; Python fallback). **Done:** planted secret detected+redacted+
   audited; benign passes; Rust + fallback agree on the shared vectors. *(needs T4, T6b)*
 - [ ] **T9 — PI/jailbreak classifier** (`src/rails/input/prompt_injection.py`, deberta-v3, warmed).
