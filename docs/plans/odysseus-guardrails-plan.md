@@ -124,7 +124,7 @@
 - [ ] **T34 — Latency report** (`src/eval/latency.py`). **Done:** per-layer p50 table vs budgets.
 
 ## Phase 8 — Hardening & governance
-- [ ] **T35 — Adaptive-attack eval** (attacker knows the top input rail; arXiv:2503.00061). **Done:**
+- [x] **T35 — Adaptive-attack eval** (attacker knows the top input rail; arXiv:2503.00061). **Done:**
   documented results + any threshold retune.
 - [x] **T36 — Audit/governance export** + NIST AI RMF / EU AI Act control map. **Done:** audit export +
   control-map doc in `docs/`.
