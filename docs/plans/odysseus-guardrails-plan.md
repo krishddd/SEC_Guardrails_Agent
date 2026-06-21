@@ -52,7 +52,7 @@
 - [x] **T9 — PI/jailbreak classifier** (`src/rails/input/prompt_injection.py`, deberta-v3, warmed).
   **Done:** blocks ≥ threshold of `Security_module` `injection_payloads`/`xpia_payloads`; FPR measured on
   a benign set; both logged split. *(needs T4)*
-- [ ] **T10 — PII detect+redact** (`src/rails/input/pii.py`, Presidio). **Done:** email/SSN/phone
+- [x] **T10 — PII detect+redact** (`src/rails/input/pii.py`, Presidio). **Done:** email/SSN/phone
   redacted; allowlist honored. *(needs T4)*
 - [x] **T11 — Spotlighting + boundary-awareness (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
   `src/rails/input/spotlight.py`; Python fallback). Datamark/delimit untrusted spans; inject
