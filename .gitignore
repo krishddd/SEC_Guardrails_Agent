@@ -31,3 +31,7 @@ reports/
 Thumbs.db
 .idea/
 .vscode/
+
+# Rust build artifacts
+target/
+crates/**/target/

@@ -36,7 +36,7 @@ jobs:
         run: pytest -q
 
   rust-core:
-    name: Rust core (fmt + clippy + test)
+    name: Rust core (fmt + clippy + test + wheel)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,6 +49,10 @@ jobs:
             echo "No crate yet — skipping Rust lane."
             echo "go=false" >> "$GITHUB_OUTPUT"
           fi
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.go == 'true'
+        with:
+          python-version: "3.11"
       - uses: dtolnay/rust-toolchain@stable
         if: steps.gate.outputs.go == 'true'
         with:
@@ -64,6 +68,14 @@ jobs:
           cargo fmt --check
           cargo clippy --all-targets -- -D warnings
           cargo test
+      - name: Build wheel + Python parity (Rust vs fallback)
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          python -m pip install --upgrade pip maturin pytest
+          maturin build -m crates/guardrails-core/Cargo.toml --release -o dist
+          pip install dist/*.whl
+          python -c "import guardrails_core; print('guardrails_core', guardrails_core.version())"
+          pytest -q tests/test_secrets_rail.py
 
   web:
     name: Web (tsc + eslint + vitest)
