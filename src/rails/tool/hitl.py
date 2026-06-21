@@ -58,6 +58,9 @@ class HITLManager:
             approval.status = ApprovalStatus.APPROVED if approved else ApprovalStatus.REJECTED
         return approval
 
+    def pending(self) -> list[Approval]:
+        return [a for a in self._store.values() if a.status is ApprovalStatus.PENDING]
+
     def is_allowed(self, approval_id: str, *, now: float) -> bool:
         approval = self._store.get(approval_id)
         if approval is None:
