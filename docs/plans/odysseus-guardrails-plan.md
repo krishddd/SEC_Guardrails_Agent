@@ -92,7 +92,7 @@
 - [x] **T22 — DSL adversarial hardening (ADR-0004 gate).** Adversarial bypass test set (encoding, arg
   smuggling, fail-open) + `security-reviewer` pass. **Done:** all bypass tests blocked; review clean.
   *(blocks T23)*
-- [ ] **T23 — HITL on irreversible tools** (`src/rails/tool/hitl.py`, risk-tiered; gateway-mediated
+- [x] **T23 — HITL on irreversible tools** (`src/rails/tool/hitl.py`, risk-tiered; gateway-mediated
   approve/reject before Odysseus executes). **Done:** irreversible tool pauses for approve/reject. *(needs T22)*
 - [x] **T24 — SSRF/egress allowlist + param validation** (`src/rails/tool/egress.py`, mirror
   `Security_module/core/ssrf_guard.py` patterns). **Done:** internal-target/exfil URL blocked; allowlisted passes.
@@ -106,7 +106,7 @@
 ## Phase 6 — Reasoning/IFC + multi-agent + oversight
 - [ ] **T27 — Quarantined-LLM parser** (`src/rails/reasoning/quarantine.py`, dual-LLM; no tool access).
   **Done:** injected instruction in quarantined text yields no tool request; typed object returned.
-- [ ] **T28 — Taint labels + trusted-action invariant** (`src/rails/reasoning/taint.py`). **Done:**
+- [x] **T28 — Taint labels + trusted-action invariant** (`src/rails/reasoning/taint.py`). **Done:**
   tool call with any untrusted-tainted arg blocked; clean call passes. *(needs T21)*
 - [ ] **T29 — Multi-agent rails** (`src/rails/multiagent/`). Resolve OQ1 first; signed messages +
   capability-token delegation + orchestrator mediation (synthetic MAS if Odysseus single-agent).
