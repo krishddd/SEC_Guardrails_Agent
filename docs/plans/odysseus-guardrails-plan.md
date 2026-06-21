@@ -74,7 +74,7 @@
   ShieldGemma 2 fallback, `_method` recorded). **Done:** unsafe blocked, benign passes.
 - [x] **T17 — PII/secret/canary leak** (`src/rails/output/leak.py`). Plant canary in system prompt;
   detect in output. **Done:** leaked canary → block; output secret redacted.
-- [ ] **T18 — URL/markdown/HTML sanitizer (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
+- [x] **T18 — URL/markdown/HTML sanitizer (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
   `src/rails/output/sanitize.py`; Python fallback). **Done:** data-bearing image/link stripped;
   allowlisted links kept; raw HTML/script blocked; Rust + fallback agree. Visual harness in `web/` (T40).
 - [ ] **T19 — Grounding check** (`src/rails/output/grounding.py`, reuse eval pipeline `grounding_judge`).

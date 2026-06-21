@@ -4,6 +4,7 @@
 
 use pyo3::prelude::*;
 
+mod sanitize;
 mod secrets;
 mod spotlight;
 
@@ -19,6 +20,12 @@ fn datamark(text: &str, marker: &str) -> String {
     spotlight::datamark(text, marker)
 }
 
+/// Sanitize markup: strip images, reduce non-allowlisted links to text, strip HTML.
+#[pyfunction]
+fn sanitize_markup(text: &str, allow_hosts: Vec<String>) -> String {
+    sanitize::sanitize_markup(text, &allow_hosts)
+}
+
 /// Crate version — a trivial smoke export to confirm the extension loaded.
 #[pyfunction]
 fn version() -> &'static str {
@@ -29,6 +36,7 @@ fn version() -> &'static str {
 fn guardrails_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(redact_secrets, m)?)?;
     m.add_function(wrap_pyfunction!(datamark, m)?)?;
+    m.add_function(wrap_pyfunction!(sanitize_markup, m)?)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
     Ok(())
 }
