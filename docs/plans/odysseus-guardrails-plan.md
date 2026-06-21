@@ -94,7 +94,7 @@
   *(blocks T23)*
 - [ ] **T23 — HITL on irreversible tools** (`src/rails/tool/hitl.py`, risk-tiered; gateway-mediated
   approve/reject before Odysseus executes). **Done:** irreversible tool pauses for approve/reject. *(needs T22)*
-- [ ] **T24 — SSRF/egress allowlist + param validation** (`src/rails/tool/egress.py`, mirror
+- [x] **T24 — SSRF/egress allowlist + param validation** (`src/rails/tool/egress.py`, mirror
   `Security_module/core/ssrf_guard.py` patterns). **Done:** internal-target/exfil URL blocked; allowlisted passes.
 
 ## Phase 5 — Retrieval/memory rails (L5) — active via hook
