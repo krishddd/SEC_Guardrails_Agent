@@ -32,9 +32,7 @@ fn host_of(url: &str) -> String {
     if let Some(i) = u.find('@') {
         u = &u[i + 1..];
     }
-    let end = u
-        .find(|c| matches!(c, '/' | '?' | '#' | ':'))
-        .unwrap_or(u.len());
+    let end = u.find(['/', '?', '#', ':']).unwrap_or(u.len());
     u[..end].to_lowercase()
 }
 
