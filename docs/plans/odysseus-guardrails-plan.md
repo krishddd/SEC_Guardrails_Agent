@@ -132,7 +132,7 @@
   ASR regression or FPR over threshold.
 
 ## Phase 9 — Frontend: HITL + observability (TypeScript/React, ADR-0007)
-- [ ] **T38 — Gateway UI API** (`src/gateway/ui_api.py`). Minimal authenticated JSON API: list pending
+- [x] **T38 — Gateway UI API** (`src/gateway/ui_api.py`). Minimal authenticated JSON API: list pending
   approvals, post approve/reject, read audit log + eval reports. Treat all input as untrusted; rate-limit.
   **Done:** endpoints unit-tested; default-deny on unknown/expired approval id. *(needs T6, T23)*
 - [ ] **T39 — HITL approval app** (`web/` — pending-approval view rendering `ToolCall` + provenance/taint;
