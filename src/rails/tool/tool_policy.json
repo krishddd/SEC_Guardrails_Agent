@@ -1,0 +1,47 @@
+{
+  "version": "1",
+  "default_effect": "block",
+  "rules": [
+    {
+      "id": "read-only",
+      "tool": "read_file|list_files|search|get_document",
+      "effect": "allow",
+      "reason": "read-only tool"
+    },
+    {
+      "id": "bash-safe",
+      "tool": "bash",
+      "when": [{"arg": "cmd", "op": "matches", "value": "(ls|pwd|cat [\\w./-]+|echo [\\w .-]*)"}],
+      "effect": "allow",
+      "reason": "allowlisted safe shell command"
+    },
+    {
+      "id": "bash-other",
+      "tool": "bash",
+      "effect": "hitl",
+      "reason": "non-allowlisted shell command needs approval"
+    },
+    {
+      "id": "api-allowlisted",
+      "tool": "api_call",
+      "when": [
+        {"arg": "host", "op": "in", "value": ["api.example.com", "good.com"]},
+        {"op": "no_untrusted_taint"}
+      ],
+      "effect": "allow",
+      "reason": "allowlisted host with untainted args"
+    },
+    {
+      "id": "create-document",
+      "tool": "create_document",
+      "effect": "hitl",
+      "reason": "irreversible write needs approval"
+    },
+    {
+      "id": "send-email",
+      "tool": "send_email",
+      "effect": "hitl",
+      "reason": "irreversible send needs approval"
+    }
+  ]
+}
