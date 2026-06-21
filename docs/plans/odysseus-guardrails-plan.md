@@ -70,14 +70,14 @@
 ## Phase 3 — Output rails (L6)
 - [x] **T15 — Schema validator + reask** (`src/rails/output/schema.py`, Pydantic). **Done:** malformed
   structured output → one reask → block, audited.
-- [ ] **T16 — Content classifier** (`src/rails/output/content.py`, Mistral Moderation primary /
+- [x] **T16 — Content classifier** (`src/rails/output/content.py`, Mistral Moderation primary /
   ShieldGemma 2 fallback, `_method` recorded). **Done:** unsafe blocked, benign passes.
 - [x] **T17 — PII/secret/canary leak** (`src/rails/output/leak.py`). Plant canary in system prompt;
   detect in output. **Done:** leaked canary → block; output secret redacted.
 - [x] **T18 — URL/markdown/HTML sanitizer (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
   `src/rails/output/sanitize.py`; Python fallback). **Done:** data-bearing image/link stripped;
   allowlisted links kept; raw HTML/script blocked; Rust + fallback agree. Visual harness in `web/` (T40).
-- [ ] **T19 — Grounding check** (`src/rails/output/grounding.py`, reuse eval pipeline `grounding_judge`).
+- [x] **T19 — Grounding check** (`src/rails/output/grounding.py`, reuse eval pipeline `grounding_judge`).
   **Done:** ungrounded claim flagged when sources present; toggle honored.
 
 ## Phase 4 — Tool/action rails (L4) — active via trace hook
