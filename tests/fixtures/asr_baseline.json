@@ -1,0 +1,7 @@
+{
+  "_note": "Regression caps for the input rails on the committed fixture set. Lowering a max is a deliberate, reviewed tightening. Full corpus vs the live Security_module is T31/T37.",
+  "prompt_injection_heuristic": {
+    "asr_max": 0.10,
+    "fpr_max": 0.10
+  }
+}

@@ -57,7 +57,7 @@
 - [x] **T11 — Spotlighting + boundary-awareness (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
   `src/rails/input/spotlight.py`; Python fallback). Datamark/delimit untrusted spans; inject
   boundary-awareness prefix. **Done:** untrusted span marked; Rust + fallback agree on vectors. *(needs T6b)*
-- [ ] **T12 — Minimal CI regression gate (pulled forward).** CI job: "ASR on the `Security_module`
+- [x] **T12 — Minimal CI regression gate (pulled forward).** CI job: "ASR on the `Security_module`
   fixture set must not regress" vs a committed baseline. **Done:** CI fails on a synthetic regression.
   *(needs T9)*
 
