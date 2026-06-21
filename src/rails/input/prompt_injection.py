@@ -38,6 +38,20 @@ _HEURISTIC_PATTERNS = [
 ]
 
 
+# Leetspeak fold for adaptive-evasion resistance (T35).
+_LEET = str.maketrans(
+    {"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"}
+)
+
+
+def _normalize(text: str) -> str:
+    """Fold common obfuscations so spacing/leetspeak/punctuation can't bypass the patterns."""
+    t = text.lower().translate(_LEET)
+    t = re.sub(r"[^a-z0-9\s]", " ", t)  # strip punctuation
+    t = re.sub(r"\s+", " ", t).strip()  # collapse whitespace
+    return t
+
+
 class HeuristicDetector:
     name = "heuristic"
 
@@ -45,7 +59,9 @@ class HeuristicDetector:
         self._rx = [re.compile(p, re.IGNORECASE) for p in _HEURISTIC_PATTERNS]
 
     def score(self, text: str) -> float:
-        hits = sum(1 for rx in self._rx if rx.search(text))
+        # Check the raw text AND a normalized variant (defeats spacing/leet/punctuation evasion).
+        variants = (text, _normalize(text))
+        hits = sum(1 for rx in self._rx if any(rx.search(v) for v in variants))
         if hits == 0:
             return 0.0
         return min(0.7 + 0.25 * (hits - 1), 0.99)  # 1 hit→0.70, 2→0.95, 3+→0.99
