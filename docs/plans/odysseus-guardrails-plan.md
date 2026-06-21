@@ -120,8 +120,8 @@
   checked against spec SC1/SC2 thresholds, split (never one F1).
 - [ ] **T32 — External benchmarks** (`src/eval/benchmarks.py`, AgentDojo/WASP via Inspect Evals).
   **Done:** ≥1 benchmark runs, reports ASR + utility-under-attack.
-- [ ] **T33 — FPR/over-refusal eval** (benign eval-pipeline suite). **Done:** per-rail FPR vs SC2 reported.
-- [ ] **T34 — Latency report** (`src/eval/latency.py`). **Done:** per-layer p50 table vs budgets.
+- [x] **T33 — FPR/over-refusal eval** (benign eval-pipeline suite). **Done:** per-rail FPR vs SC2 reported.
+- [x] **T34 — Latency report** (`src/eval/latency.py`). **Done:** per-layer p50 table vs budgets.
 
 ## Phase 8 — Hardening & governance
 - [x] **T35 — Adaptive-attack eval** (attacker knows the top input rail; arXiv:2503.00061). **Done:**
