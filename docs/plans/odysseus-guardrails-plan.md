@@ -126,7 +126,7 @@
 ## Phase 8 — Hardening & governance
 - [ ] **T35 — Adaptive-attack eval** (attacker knows the top input rail; arXiv:2503.00061). **Done:**
   documented results + any threshold retune.
-- [ ] **T36 — Audit/governance export** + NIST AI RMF / EU AI Act control map. **Done:** audit export +
+- [x] **T36 — Audit/governance export** + NIST AI RMF / EU AI Act control map. **Done:** audit export +
   control-map doc in `docs/`.
 - [ ] **T37 — Full CI quality gate.** ASR/FPR thresholds blocking (extends T12). **Done:** CI fails on
   ASR regression or FPR over threshold.
