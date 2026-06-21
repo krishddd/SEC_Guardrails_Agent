@@ -49,7 +49,7 @@
 - [x] **T8 — Secrets/regex scrubber (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
   `src/rails/input/secrets.py` wrapper; Python fallback). **Done:** planted secret detected+redacted+
   audited; benign passes; Rust + fallback agree on the shared vectors. *(needs T4, T6b)*
-- [ ] **T9 — PI/jailbreak classifier** (`src/rails/input/prompt_injection.py`, deberta-v3, warmed).
+- [x] **T9 — PI/jailbreak classifier** (`src/rails/input/prompt_injection.py`, deberta-v3, warmed).
   **Done:** blocks ≥ threshold of `Security_module` `injection_payloads`/`xpia_payloads`; FPR measured on
   a benign set; both logged split. *(needs T4)*
 - [ ] **T10 — PII detect+redact** (`src/rails/input/pii.py`, Presidio). **Done:** email/SSN/phone
