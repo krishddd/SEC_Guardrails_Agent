@@ -104,14 +104,14 @@
   threshold, PII mask, cross-tenant block. **Done:** cross-tenant read blocked; low-trust chunk dropped.
 
 ## Phase 6 — Reasoning/IFC + multi-agent + oversight
-- [ ] **T27 — Quarantined-LLM parser** (`src/rails/reasoning/quarantine.py`, dual-LLM; no tool access).
+- [x] **T27 — Quarantined-LLM parser** (`src/rails/reasoning/quarantine.py`, dual-LLM; no tool access).
   **Done:** injected instruction in quarantined text yields no tool request; typed object returned.
 - [x] **T28 — Taint labels + trusted-action invariant** (`src/rails/reasoning/taint.py`). **Done:**
   tool call with any untrusted-tainted arg blocked; clean call passes. *(needs T21)*
 - [x] **T29 — Multi-agent rails** (`src/rails/multiagent/`). Resolve OQ1 first; signed messages +
   capability-token delegation + orchestrator mediation (synthetic MAS if Odysseus single-agent).
   **Done:** tampered inter-agent message rejected.
-- [ ] **T30 — Oversight critic** (`src/rails/oversight/critic.py`, post-hoc on trajectory+output).
+- [x] **T30 — Oversight critic** (`src/rails/oversight/critic.py`, post-hoc on trajectory+output).
   **Done:** goal-drift trajectory flagged.
 
 ## Phase 7 — Testing methods on security methods
