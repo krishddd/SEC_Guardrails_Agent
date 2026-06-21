@@ -10,9 +10,15 @@ fn patterns() -> &'static Vec<(Regex, &'static str)> {
     PATTERNS.get_or_init(|| {
         vec![
             (Regex::new(r"sk-[A-Za-z0-9]{20,}").unwrap(), "OPENAI_KEY"),
-            (Regex::new(r"gh[oprsu]_[A-Za-z0-9]{20,}").unwrap(), "GITHUB_TOKEN"),
+            (
+                Regex::new(r"gh[oprsu]_[A-Za-z0-9]{20,}").unwrap(),
+                "GITHUB_TOKEN",
+            ),
             (Regex::new(r"AKIA[0-9A-Z]{16}").unwrap(), "AWS_ACCESS_KEY"),
-            (Regex::new(r"xox[baprs]-[A-Za-z0-9-]{10,}").unwrap(), "SLACK_TOKEN"),
+            (
+                Regex::new(r"xox[baprs]-[A-Za-z0-9-]{10,}").unwrap(),
+                "SLACK_TOKEN",
+            ),
         ]
     })
 }
