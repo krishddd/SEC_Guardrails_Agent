@@ -37,6 +37,8 @@ class ToolCall:
     args: dict[str, Any] = field(default_factory=dict)
     # Names of args carrying untrusted (tainted) data — set by upstream rails (T28).
     tainted_args: set[str] = field(default_factory=set)
+    # Calling agent's role, for RBAC scoping (ADR-0008). None = unscoped.
+    role: str | None = None
 
 
 @dataclass
@@ -121,6 +123,10 @@ class PolicyEngine:
     def evaluate(self, call: ToolCall) -> PolicyResult:
         for rule in self.rules:
             if not _match_tool(rule.get("tool", ""), call.name):
+                continue
+            # RBAC: a rule with a `roles` allowlist only applies to those roles (ADR-0008).
+            roles = rule.get("roles")
+            if roles is not None and call.role not in roles:
                 continue
             predicates = rule.get("when", [])
             if all(_check_predicate(p, call) for p in predicates):
