@@ -128,7 +128,7 @@
   documented results + any threshold retune.
 - [x] **T36 — Audit/governance export** + NIST AI RMF / EU AI Act control map. **Done:** audit export +
   control-map doc in `docs/`.
-- [ ] **T37 — Full CI quality gate.** ASR/FPR thresholds blocking (extends T12). **Done:** CI fails on
+- [x] **T37 — Full CI quality gate.** ASR/FPR thresholds blocking (extends T12). **Done:** CI fails on
   ASR regression or FPR over threshold.
 
 ## Phase 9 — Frontend: HITL + observability (TypeScript/React, ADR-0007)
