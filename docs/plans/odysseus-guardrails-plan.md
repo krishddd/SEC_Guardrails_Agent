@@ -147,3 +147,12 @@
 - [ ] Daily push to `github.com/krishddd/SEC_Guardrails_Agent` at end of each session (`.env` gitignored).
 - [ ] Polyglot CI green across all three lanes (Python ruff/pytest, Rust fmt/clippy/test+maturin,
   web tsc/eslint/vitest) — folded into T12/T37 gates.
+
+## Enhancements — research-distilled (ADR-0008)
+Best-of-breed deterministic controls copied from LlamaFirewall, AgentDoG, SupraWall/AperionAI,
+Kore.ai (kept lean, no new deps):
+- [x] **E1 — Tool-execution gate** (`src/rails/tool/exec_gate.py`). Pre-call hard-stops: catastrophic
+  shell denylist (`rm -rf /`, `mkfs`, `dd of=/dev/*`, fork bomb, `shutdown`, `chmod -R 777 /`); SQL DDL
+  + unscoped DML block; auto-inject `LIMIT` on un-limited `SELECT`. **Done:** destructive/SQL tests pass.
+- [x] **E2 — RBAC scoping** (`ToolCall.role` + rule `roles` allowlist in the policy engine). **Done:**
+  a `roles`-scoped rule applies only to authorized roles; others hit deny-by-default.
