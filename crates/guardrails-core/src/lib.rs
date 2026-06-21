@@ -5,11 +5,18 @@
 use pyo3::prelude::*;
 
 mod secrets;
+mod spotlight;
 
 /// Redact common secret patterns from `text`, returning the masked string.
 #[pyfunction]
 fn redact_secrets(text: &str) -> String {
     secrets::redact(text)
+}
+
+/// Datamark untrusted text: trim, then replace interword whitespace with `marker`.
+#[pyfunction]
+fn datamark(text: &str, marker: &str) -> String {
+    spotlight::datamark(text, marker)
 }
 
 /// Crate version — a trivial smoke export to confirm the extension loaded.
@@ -21,6 +28,7 @@ fn version() -> &'static str {
 #[pymodule]
 fn guardrails_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(redact_secrets, m)?)?;
+    m.add_function(wrap_pyfunction!(datamark, m)?)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
     Ok(())
 }

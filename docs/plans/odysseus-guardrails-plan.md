@@ -54,7 +54,7 @@
   a benign set; both logged split. *(needs T4)*
 - [ ] **T10 — PII detect+redact** (`src/rails/input/pii.py`, Presidio). **Done:** email/SSN/phone
   redacted; allowlist honored. *(needs T4)*
-- [ ] **T11 — Spotlighting + boundary-awareness (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
+- [x] **T11 — Spotlighting + boundary-awareness (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
   `src/rails/input/spotlight.py`; Python fallback). Datamark/delimit untrusted spans; inject
   boundary-awareness prefix. **Done:** untrusted span marked; Rust + fallback agree on vectors. *(needs T6b)*
 - [ ] **T12 — Minimal CI regression gate (pulled forward).** CI job: "ASR on the `Security_module`

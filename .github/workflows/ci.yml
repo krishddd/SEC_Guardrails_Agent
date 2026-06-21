@@ -75,7 +75,7 @@ jobs:
           maturin build -m crates/guardrails-core/Cargo.toml --release --features extension-module -o dist
           pip install dist/*.whl
           python -c "import guardrails_core; print('guardrails_core', guardrails_core.version())"
-          pytest -q tests/test_secrets_rail.py
+          pytest -q tests/test_secrets_rail.py tests/test_spotlight_rail.py
 
   web:
     name: Web (tsc + eslint + vitest)
