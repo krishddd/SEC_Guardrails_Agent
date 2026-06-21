@@ -108,7 +108,7 @@
   **Done:** injected instruction in quarantined text yields no tool request; typed object returned.
 - [x] **T28 — Taint labels + trusted-action invariant** (`src/rails/reasoning/taint.py`). **Done:**
   tool call with any untrusted-tainted arg blocked; clean call passes. *(needs T21)*
-- [ ] **T29 — Multi-agent rails** (`src/rails/multiagent/`). Resolve OQ1 first; signed messages +
+- [x] **T29 — Multi-agent rails** (`src/rails/multiagent/`). Resolve OQ1 first; signed messages +
   capability-token delegation + orchestrator mediation (synthetic MAS if Odysseus single-agent).
   **Done:** tampered inter-agent message rejected.
 - [ ] **T30 — Oversight critic** (`src/rails/oversight/critic.py`, post-hoc on trajectory+output).
