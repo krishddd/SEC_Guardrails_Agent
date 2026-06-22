@@ -9,6 +9,31 @@
       "reason": "read-only tool"
     },
     {
+      "id": "calc",
+      "tool": "calc",
+      "effect": "allow",
+      "reason": "pure arithmetic, no side effects"
+    },
+    {
+      "id": "echo",
+      "tool": "echo",
+      "effect": "allow",
+      "reason": "returns text, no side effects"
+    },
+    {
+      "id": "http-get",
+      "tool": "http_fetch",
+      "effect": "allow",
+      "reason": "outbound fetch (URL gated separately by the egress guard)"
+    },
+    {
+      "id": "sql-read",
+      "tool": "sql",
+      "when": [{"arg": "query", "op": "matches", "value": "(?is)\\s*select .*"}],
+      "effect": "allow",
+      "reason": "read-only SELECT (DDL/unscoped-DML blocked by the exec gate)"
+    },
+    {
       "id": "bash-safe",
       "tool": "bash",
       "when": [{"arg": "cmd", "op": "matches", "value": "(ls|pwd|cat [\\w./-]+|echo [\\w .-]*)"}],

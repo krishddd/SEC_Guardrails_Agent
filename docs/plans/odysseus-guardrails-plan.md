@@ -156,3 +156,11 @@ Kore.ai (kept lean, no new deps):
   + unscoped DML block; auto-inject `LIMIT` on un-limited `SELECT`. **Done:** destructive/SQL tests pass.
 - [x] **E2 — RBAC scoping** (`ToolCall.role` + rule `roles` allowlist in the policy engine). **Done:**
   a `roles`-scoped rule applies only to authorized roles; others hit deny-by-default.
+
+## Complete safety net — self-contained engine + reference agent (ADR-0009)
+- [x] **E3 — GuardrailEngine + reference guarded agent.** `src/core/engine.py` composes every layer
+  (input→dialog→tool[exec/egress/policy+RBAC/taint/HITL]→memory→output→oversight) with audit on every
+  decision; `src/agent/` is a real tool-executing agent that runs *under* it (in-process equivalent of
+  the Odysseus trace hook, so L4/L5/oversight are live, not synthetic). **Done:** `scripts/demo.py` +
+  `tests/test_agent_e2e.py` show injection/destructive-shell/DDL/SSRF/canary all blocked at the right
+  layer and benign tasks completing. Agent-agnostic: Odysseus plugs into the same `guard_*` API.
