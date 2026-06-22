@@ -126,9 +126,14 @@
   live API token exposes no per-step trace, so tool-layer prevention stays gated on T20), `guard_output`
   on the reply. **Done:** unit tests vs the stub agent show injection/secret input blocked pre-send,
   benign forwarded, leaked-canary output withheld; no live dependency.
-- [ ] **T31 — A/B attack harness** (`src/eval/ab_harness.py`). Security_module direct vs via gateway →
-  ASR per attack class + utility retention. **Done:** report shows ASR(gateway) ≤ ASR(direct) per class,
-  checked against spec SC1/SC2 thresholds, split (never one F1).
+- [x] **T31 — A/B attack harness** (`src/eval/ab_harness.py`). Security_module direct vs via gateway →
+  ASR per attack class + utility retention. **Done:** injectable core + live wiring
+  (`scripts/run_ab_live.py`); ran live vs Odysseus `:7000` over 32 attacks / 11 classes / 10 benign.
+  Result ([`docs/eval/T31-ab-findings.md`](../eval/T31-ab-findings.md)): **SC1 invariant PASS**
+  (ASR_gw ≤ ASR_direct every class; overall 0.53→0.44), **SC2 PASS** (FPR 0.00, utility 1.00), split
+  (never one F1). SC1 ≥50%-reduction target only PARTIAL on deterministic rails — the role-reassign/
+  indirect/XPIA gap is the `[ml]` backend's job (T7), not a harness defect. Tool-layer ASR still gated
+  on T20-live. *(checked against spec SC1/SC2)*
 - [ ] **T32 — External benchmarks** (`src/eval/benchmarks.py`, AgentDojo/WASP via Inspect Evals).
   **Done:** ≥1 benchmark runs, reports ASR + utility-under-attack.
 - [x] **T33 — FPR/over-refusal eval** (benign eval-pipeline suite). **Done:** per-rail FPR vs SC2 reported.
