@@ -81,9 +81,14 @@
   **Done:** ungrounded claim flagged when sources present; toggle honored.
 
 ## Phase 4 — Tool/action rails (L4) — active via trace hook
-- [ ] **T20 — Trace-export hook in Odysseus** (`odysseus/src/tool_execution.py`, read-only; ADR-0005).
-  Emit normalized tool-call events to the gateway. **Done:** stub/live tool call produces a trace event
-  the gateway receives; Odysseus behaviour unchanged. *(pins OQ3 schema)*
+- [x] **T20 — Trace-export hook in Odysseus** (`odysseus/src/tool_execution.py`, read-only; ADR-0005).
+  Emit normalized tool-call events to the gateway. **Done:** OQ3 shape pinned to
+  `{tool_name, args, result, status, exit_code, latency_ms, session_id}`. Odysseus side
+  (`odysseus/src/guardrail_trace.py` + a decorator on `execute_tool_block`) is observe-only and OFF
+  unless `GUARDRAIL_TRACE_URL` is set — fire-and-forget, all failures swallowed, behaviour unchanged
+  (committed to local branch `feat/guardrail-trace-export`; remote is third-party, not pushed). Gateway
+  side `POST /api/_trace` maps the event onto a `ToolCall` (by tool family) and runs `guard_tool`
+  **detectively**, with a token gate + observe-only fallback. Tests both sides. *(pins OQ3 schema)*
 - [x] **T21 — In-house policy DSL (Rust-backed, ADR-0006/0004)** (parser+evaluator in
   `crates/guardrails-core/` + `src/rails/tool/policy.py` wrapper; Python fallback). Deny-by-default over a
   normalized `ToolCall`. **Done:** `bash`/`api_call` blocked unless policy allows; decision logged w/
