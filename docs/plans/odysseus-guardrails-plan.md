@@ -115,6 +115,12 @@
   **Done:** goal-drift trajectory flagged.
 
 ## Phase 7 — Testing methods on security methods
+- [x] **T31a — GuardedOdysseusClient** (`src/gateway/guarded_odysseus.py`). The "via gateway" arm for
+  T31: wraps `OdysseusClient` + `GuardrailEngine` — `guard_input` (preventive, pre-send), forward the
+  sanitized message, `guard_tool` over any tool trace that *is* present (detective/audit only — the
+  live API token exposes no per-step trace, so tool-layer prevention stays gated on T20), `guard_output`
+  on the reply. **Done:** unit tests vs the stub agent show injection/secret input blocked pre-send,
+  benign forwarded, leaked-canary output withheld; no live dependency.
 - [ ] **T31 — A/B attack harness** (`src/eval/ab_harness.py`). Security_module direct vs via gateway →
   ASR per attack class + utility retention. **Done:** report shows ASR(gateway) ≤ ASR(direct) per class,
   checked against spec SC1/SC2 thresholds, split (never one F1).
