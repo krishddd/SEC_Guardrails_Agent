@@ -81,9 +81,14 @@
   **Done:** ungrounded claim flagged when sources present; toggle honored.
 
 ## Phase 4 — Tool/action rails (L4) — active via trace hook
-- [ ] **T20 — Trace-export hook in Odysseus** (`odysseus/src/tool_execution.py`, read-only; ADR-0005).
-  Emit normalized tool-call events to the gateway. **Done:** stub/live tool call produces a trace event
-  the gateway receives; Odysseus behaviour unchanged. *(pins OQ3 schema)*
+- [x] **T20 — Trace-export hook in Odysseus** (`odysseus/src/tool_execution.py`, read-only; ADR-0005).
+  Emit normalized tool-call events to the gateway. **Done:** OQ3 shape pinned to
+  `{tool_name, args, result, status, exit_code, latency_ms, session_id}`. Odysseus side
+  (`odysseus/src/guardrail_trace.py` + a decorator on `execute_tool_block`) is observe-only and OFF
+  unless `GUARDRAIL_TRACE_URL` is set — fire-and-forget, all failures swallowed, behaviour unchanged
+  (committed to local branch `feat/guardrail-trace-export`; remote is third-party, not pushed). Gateway
+  side `POST /api/_trace` maps the event onto a `ToolCall` (by tool family) and runs `guard_tool`
+  **detectively**, with a token gate + observe-only fallback. Tests both sides. *(pins OQ3 schema)*
 - [x] **T21 — In-house policy DSL (Rust-backed, ADR-0006/0004)** (parser+evaluator in
   `crates/guardrails-core/` + `src/rails/tool/policy.py` wrapper; Python fallback). Deny-by-default over a
   normalized `ToolCall`. **Done:** `bash`/`api_call` blocked unless policy allows; decision logged w/
@@ -115,6 +120,12 @@
   **Done:** goal-drift trajectory flagged.
 
 ## Phase 7 — Testing methods on security methods
+- [x] **T31a — GuardedOdysseusClient** (`src/gateway/guarded_odysseus.py`). The "via gateway" arm for
+  T31: wraps `OdysseusClient` + `GuardrailEngine` — `guard_input` (preventive, pre-send), forward the
+  sanitized message, `guard_tool` over any tool trace that *is* present (detective/audit only — the
+  live API token exposes no per-step trace, so tool-layer prevention stays gated on T20), `guard_output`
+  on the reply. **Done:** unit tests vs the stub agent show injection/secret input blocked pre-send,
+  benign forwarded, leaked-canary output withheld; no live dependency.
 - [ ] **T31 — A/B attack harness** (`src/eval/ab_harness.py`). Security_module direct vs via gateway →
   ASR per attack class + utility retention. **Done:** report shows ASR(gateway) ≤ ASR(direct) per class,
   checked against spec SC1/SC2 thresholds, split (never one F1).
