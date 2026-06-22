@@ -164,3 +164,13 @@ Kore.ai (kept lean, no new deps):
   the Odysseus trace hook, so L4/L5/oversight are live, not synthetic). **Done:** `scripts/demo.py` +
   `tests/test_agent_e2e.py` show injection/destructive-shell/DDL/SSRF/canary all blocked at the right
   layer and benign tasks completing. Agent-agnostic: Odysseus plugs into the same `guard_*` API.
+
+## Enhancements — round 2, research-distilled (ADR-0010)
+- [x] **E4 — Budget/cost tracking** (`core/budget.py`; Pydantic AI Shields). Per-session tool-call/token/
+  USD caps; engine blocks tool calls on overrun. Tests + e2e (3rd call over cap blocked).
+- [x] **E5 — Blocked-phrases word filter** (`rails/dialog/word_filter.py`; AWS Bedrock). Exact-phrase
+  denylist on input+output chains; empty=no-op. Tests + e2e.
+- [x] **E6 — CodeShield** (`rails/tool/code_shield.py`; LlamaFirewall). Regex static analysis of
+  generated code (eval/exec/os.system/shell=True/pickle/yaml.load/verify=False); `engine.guard_code`.
+- [x] **E7 — Incident taxonomy** (`eval/taxonomy.py`; AgentDoG). 3-dim (risk-source/failure-mode/harm)
+  classification of every block; surfaced in the governance export.
