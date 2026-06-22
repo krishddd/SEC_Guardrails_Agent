@@ -14,9 +14,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from core.audit import AuditLog
-from core.rail import RailChain, RailContext, TrustLevel
+from core.budget import Budget, BudgetTracker
+from core.rail import Action, RailChain, RailContext, TrustLevel
 from rails.dialog.task_shield import TaskShieldRail
 from rails.dialog.topics import TopicPolicyRail
+from rails.dialog.word_filter import WordFilterRail
 from rails.input.pii import PIIRail
 from rails.input.prompt_injection import PromptInjectionRail
 from rails.input.secrets import SecretsRail
@@ -29,6 +31,7 @@ from rails.output.leak import OutputLeakRail
 from rails.output.sanitize import SanitizeRail
 from rails.oversight.critic import Critic, Trajectory, Verdict
 from rails.reasoning.taint import TaintGate
+from rails.tool.code_shield import CodeShieldRail
 from rails.tool.egress import EgressGuard
 from rails.tool.exec_gate import ExecGate
 from rails.tool.hitl import HITLManager
@@ -68,6 +71,7 @@ class GuardrailEngine:
     memory: MemoryStore
     critic: Critic | None = None
     canaries: list[str] = field(default_factory=list)
+    budget: BudgetTracker | None = None
 
     # ── input ────────────────────────────────────────────────────────────────
     def guard_input(
@@ -112,6 +116,10 @@ class GuardrailEngine:
                 decision="hitl", stage="policy", tool=call.name, approval_id=approval.id
             )
             return ToolVerdict(Effect.HITL, call, result.reason, "policy", approval.id)
+        if self.budget is not None:
+            ok, reason = self.budget.check_and_charge(tool_calls=1)
+            if not ok:
+                return self._tool_blocked("budget", call, reason)
         self.audit.record(decision="allow", stage="tool", tool=call.name)
         return ToolVerdict(Effect.ALLOW, call, result.reason, "tool")
 
@@ -135,6 +143,15 @@ class GuardrailEngine:
             return self._blocked("output", result.blocked_by, result.decision.reason)
         self.audit.record(decision="allow", stage="output")
         return GuardOutcome(True, result.ctx.text, "ok", "output")
+
+    # ── code (CodeShield) ──────────────────────────────────────────────────────
+    def guard_code(self, code: str) -> GuardOutcome:
+        ctx = RailContext(text=code, source="agent", trust=TrustLevel.UNTRUSTED)
+        decision = CodeShieldRail().inspect(ctx)
+        if decision.action is Action.BLOCK:
+            return self._blocked("code_shield", "code_shield", decision.reason)
+        self.audit.record(decision="allow", stage="code_shield")
+        return GuardOutcome(True, code, "ok", "code_shield")
 
     # ── oversight ──────────────────────────────────────────────────────────────
     def review(self, traj: Trajectory) -> Verdict:
@@ -161,17 +178,32 @@ def default_engine(
     *,
     canaries: list[str] | None = None,
     allow_hosts: set[str] | None = None,
+    blocked_phrases: list[str] | None = None,
+    budget: Budget | None = None,
 ) -> GuardrailEngine:
     canaries = canaries or []
+    blocked_phrases = blocked_phrases or []
     return GuardrailEngine(
         audit=audit,
         # IPs are exempt on the command channel (egress guards them); output still redacts IPs.
         input_chain=RailChain(
-            [SecretsRail(), PromptInjectionRail(), PIIRail(allow={"IP"}), SpotlightRail()]
+            [
+                SecretsRail(),
+                PromptInjectionRail(),
+                PIIRail(allow={"IP"}),
+                WordFilterRail(blocked_phrases),
+                SpotlightRail(),
+            ]
         ),
         dialog_chain=RailChain([TaskShieldRail([]), TopicPolicyRail()]),
         output_chain=RailChain(
-            [ContentRail(), OutputLeakRail(canaries=canaries), SanitizeRail(), GroundingRail()]
+            [
+                ContentRail(),
+                WordFilterRail(blocked_phrases),
+                OutputLeakRail(canaries=canaries),
+                SanitizeRail(),
+                GroundingRail(),
+            ]
         ),
         exec_gate=ExecGate(),
         taint_gate=TaintGate(PolicyEngine()),
@@ -180,4 +212,5 @@ def default_engine(
         memory=MemoryStore(),
         critic=None,
         canaries=canaries,
+        budget=BudgetTracker(budget) if budget is not None else None,
     )

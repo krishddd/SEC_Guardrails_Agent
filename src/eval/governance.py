@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 
+from eval.taxonomy import classify
+
 # Audit decision/category → compliance controls it provides evidence for.
 CONTROL_MAP: dict[str, dict[str, list[str]]] = {
     "record_keeping": {
@@ -69,8 +71,18 @@ def _controls_for(category: str) -> set[str]:
     return set(entry["nist_ai_rmf"]) | set(entry["eu_ai_act"])
 
 
+def taxonomy_breakdown(records: list[dict]) -> dict[str, int]:
+    """Count blocked/error decisions by AgentDoG failure-mode (risk-source/harm via classify)."""
+    counts: Counter[str] = Counter()
+    for r in records:
+        if r.get("decision") in ("block", "error"):
+            tags = classify(str(r.get("stage", "")), str(r.get("reason", "")))
+            counts[tags["failure_mode"]] += 1
+    return dict(counts)
+
+
 def export(records: list[dict]) -> dict:
-    """JSON-serializable governance export: the summary + the control map used to derive it."""
+    """JSON governance export: summary + control map + AgentDoG taxonomy of incidents."""
     report = summarize(records)
     return {
         "summary": {
@@ -81,4 +93,5 @@ def export(records: list[dict]) -> dict:
             "controls_evidenced": report.controls_evidenced,
         },
         "control_map": CONTROL_MAP,
+        "taxonomy": taxonomy_breakdown(records),
     }
