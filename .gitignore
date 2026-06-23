@@ -25,6 +25,7 @@ models/
 # Eval/audit output
 reports/
 *.log
+*.jsonl
 
 # OS / editor
 .DS_Store

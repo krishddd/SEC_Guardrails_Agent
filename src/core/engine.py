@@ -180,16 +180,20 @@ def default_engine(
     allow_hosts: set[str] | None = None,
     blocked_phrases: list[str] | None = None,
     budget: Budget | None = None,
+    pi_detector: object | None = None,
 ) -> GuardrailEngine:
     canaries = canaries or []
     blocked_phrases = blocked_phrases or []
+    # `pi_detector` swaps the prompt-injection backend (e.g. the deberta-v3 ML detector from the
+    # `ml` extra) in for the default heuristic; None keeps the cheap deterministic first-line.
+    pi_rail = PromptInjectionRail(pi_detector) if pi_detector is not None else PromptInjectionRail()
     return GuardrailEngine(
         audit=audit,
         # IPs are exempt on the command channel (egress guards them); output still redacts IPs.
         input_chain=RailChain(
             [
                 SecretsRail(),
-                PromptInjectionRail(),
+                pi_rail,
                 PIIRail(allow={"IP"}),
                 WordFilterRail(blocked_phrases),
                 SpotlightRail(),

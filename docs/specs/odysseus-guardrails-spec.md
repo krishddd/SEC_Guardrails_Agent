@@ -70,7 +70,13 @@ or do is allowed, and measurably reduces attack success without destroying task 
   pipeline's benign Odysseus suite, chat-mode tasks), the gateway must hold **task-completion drop ≤ 5%**
   and **over-refusal (FPR) ≤ 3%** vs direct. These are acceptance gates, not just measurements; the P7
   A/B harness checks against them.
-- **SC3 (latency):** Warmed per-layer p50 within budget (input <30 / dialog <200 / output <50 ms);
-  if unmet, the budget is revised in this spec during the latency spike, before it is load-bearing.
+- **SC3 (latency):** Warmed per-layer p50 within budget (input <30 / dialog <200 / output <50 ms).
+  **Revised by the T7 spike (2026-06-23, [`../architecture/T7-latency-spike.md`](../architecture/T7-latency-spike.md)):**
+  the **deterministic input rails meet <30 ms** (secrets + heuristic PI + Presidio PII ≈ 15 ms p50),
+  but the **deberta-v3 ML prompt-injection classifier is carved out with its own budget** — **<30 ms
+  p50 on GPU**, or **≤350 ms p50 on CPU** as a documented degraded mode (measured 323 ms). On a
+  CPU-only host the gateway defaults to the heuristic detector inline and runs deberta only opt-in
+  (A/B / GPU deployments) or as a conditional second stage; it is not inline on every turn at CPU
+  latency.
 - **SC4 (observability):** 100% of rail decisions emit an OTel span + an append-only audit record.
 - **SC5 (governance):** Audit log exportable and mapped to NIST AI RMF / EU AI Act controls.
