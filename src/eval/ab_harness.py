@@ -254,7 +254,7 @@ def load_security_module_attacks(
             continue
         chosen = payloads if limit_per_class is None else payloads[:limit_per_class]
         if limit_per_class is not None and len(payloads) > limit_per_class:
-            skipped.append(f"{attack_class}: capped {len(payloads)}→{limit_per_class}")
+            skipped.append(f"{attack_class}: capped {len(payloads)}->{limit_per_class}")
         for i, p in enumerate(chosen):
             markers = tuple(getattr(p, "intent_keywords", "").split()) if has_kw else ()
             cases.append(AttackCase(f"{attack_class}-{i}", attack_class, _payload_text(p), markers))
