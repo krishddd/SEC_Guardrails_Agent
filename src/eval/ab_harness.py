@@ -270,15 +270,25 @@ def _payload_text(payload) -> str:
     return str(payload)
 
 
-def build_live_arms(config) -> tuple[DirectArm, GatewayArm]:
-    """Wire real Odysseus arms from a `core.config.Config`; the gateway arm runs the full engine."""
+def build_live_arms(config, *, use_ml: bool = False) -> tuple[DirectArm, GatewayArm]:
+    """Wire real Odysseus arms from a `core.config.Config`; the gateway arm runs the full engine.
+
+    `use_ml=True` swaps the deberta-v3 prompt-injection detector (the `ml` extra) in for the
+    heuristic — the main ASR lever on role-reassignment / indirect / XPIA (see T31 findings).
+    """
     from core.audit import AuditLog
     from core.engine import default_engine
     from gateway.guarded_odysseus import GuardedOdysseusClient
     from gateway.odysseus_client import OdysseusClient, OdysseusError
 
+    pi_detector = None
+    if use_ml:
+        from rails.input.prompt_injection import load_deberta_detector
+
+        pi_detector = load_deberta_detector()
+
     client = OdysseusClient(config.odysseus_base_url, config.odysseus_token)
-    engine = default_engine(AuditLog("ab_harness_audit.jsonl"))
+    engine = default_engine(AuditLog("ab_harness_audit.jsonl"), pi_detector=pi_detector)
     guarded = GuardedOdysseusClient(client, engine)
 
     def direct(text: str) -> str:

@@ -6,7 +6,7 @@ Usage:
 Env:
     GUARDRAILS_ENV_FALLBACK  — path to the eval-pipeline .env (ODYSSEUS_TOKEN/BASE_URL); defaults to
                                "../Agent evals/Agent eval pipeline/.env".
-    SECURITY_MODULE_ROOT     — red-team repo root; defaults to the sibling Agent_security_testing path.
+    SECURITY_MODULE_ROOT     — red-team repo root; defaults to the sibling Agent_security_testing.
     AB_LIMIT_PER_CLASS       — optional int cap per attack suite (keeps a smoke run fast).
 """
 
@@ -46,7 +46,9 @@ def main() -> int:
     benign = json.loads((ROOT / "tests/fixtures/benign_prompts.json").read_text(encoding="utf-8"))
     print(f"[ab] attacks={len(attacks)}  benign={len(benign)}  skipped={len(skipped)}")
 
-    direct, gateway = build_live_arms(config)
+    use_ml = os.getenv("AB_USE_ML", "").lower() in ("1", "true", "yes")
+    print(f"[ab] ml_backend={'deberta-v3' if use_ml else 'heuristic'}")
+    direct, gateway = build_live_arms(config, use_ml=use_ml)
 
     t0 = time.time()
     report = run_ab(attacks, benign, direct, gateway)
@@ -58,9 +60,11 @@ def main() -> int:
 
     out_dir = ROOT / "docs" / "eval"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "ab_report.json").write_text(json.dumps(report.as_dict(), indent=2), encoding="utf-8")
-    (out_dir / "ab_report.txt").write_text(text + "\n", encoding="utf-8")
-    print(f"[ab] wrote {out_dir / 'ab_report.json'} and ab_report.txt")
+    suffix = "_ml" if use_ml else ""  # keep the heuristic baseline alongside the ML run
+    report_json = json.dumps(report.as_dict(), indent=2)
+    (out_dir / f"ab_report{suffix}.json").write_text(report_json, encoding="utf-8")
+    (out_dir / f"ab_report{suffix}.txt").write_text(text + "\n", encoding="utf-8")
+    print(f"[ab] wrote {out_dir / f'ab_report{suffix}.json'} and ab_report{suffix}.txt")
     return 0
 
 

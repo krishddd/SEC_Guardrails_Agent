@@ -44,8 +44,12 @@
   the dual-backend test harness runs green. *(blocks T8, T11, T18, T21)*
 
 ## Phase 1 — Input rails (L1) + early regression gate
-- [ ] **T7 — Latency spike (FIRST in P1).** Bench deberta-v3 + Presidio + secrets-scrub together on the
-  host. **Done:** measured warmed p50 recorded in `docs/architecture/`; if >30ms, revise spec SC3 now.
+- [x] **T7 — Latency spike (FIRST in P1).** Bench deberta-v3 + Presidio + secrets-scrub together on the
+  host. **Done:** `[ml]` installed + verified; warmed p50 recorded in
+  [`docs/architecture/T7-latency-spike.md`](../architecture/T7-latency-spike.md) — secrets 0.01ms,
+  Presidio 14.2ms (both OK), **deberta-v3 323ms (11× over)** on CPU. SC3 **revised in the spec**
+  (deterministic input <30ms holds; ML PI classifier carved out: <30ms GPU / ≤350ms CPU degraded /
+  conditional second-stage). ML A/B re-run shows interception 0.19→0.47 at FPR 0.00 (T31 findings).
 - [x] **T8 — Secrets/regex scrubber (Rust-backed, ADR-0006)** (`crates/guardrails-core/` +
   `src/rails/input/secrets.py` wrapper; Python fallback). **Done:** planted secret detected+redacted+
   audited; benign passes; Rust + fallback agree on the shared vectors. *(needs T4, T6b)*
