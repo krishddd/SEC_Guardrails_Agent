@@ -37,10 +37,12 @@ class GatewayOutcome:
     blocked: bool
     stage: str
     response: str | None
+    errored: bool = False  # the upstream (Odysseus) failed — NOT a guardrail block
 
 
-# A direct arm maps a prompt → the raw model response text.
-DirectArm = Callable[[str], str]
+# A direct arm maps a prompt → the raw model response text, or None if the upstream errored
+# (so an Odysseus failure is never silently scored as "the attack didn't succeed").
+DirectArm = Callable[[str], "str | None"]
 # A gateway arm maps a prompt → the engine's outcome.
 GatewayArm = Callable[[str], GatewayOutcome]
 
@@ -114,6 +116,10 @@ class ABReport:
     fpr_gateway: float
     utility_gateway: float
     n_benign: int
+    # Upstream (Odysseus) failures — surfaced so an ASR/FPR of 0 is never a silent error artifact.
+    direct_errors: int = 0
+    gateway_errors: int = 0
+    benign_errors: int = 0
     skipped: list[str] = field(default_factory=list)  # never silently drop coverage
 
     def as_dict(self) -> dict:
@@ -123,6 +129,9 @@ class ABReport:
             "fpr_gateway": self.fpr_gateway,
             "utility_gateway": self.utility_gateway,
             "n_benign": self.n_benign,
+            "direct_errors": self.direct_errors,
+            "gateway_errors": self.gateway_errors,
+            "benign_errors": self.benign_errors,
             "skipped": self.skipped,
         }
 
@@ -141,10 +150,16 @@ def run_ab(
     judge = judge or HeuristicJudge()
     by_class: dict[str, list[tuple[bool, bool, bool]]] = defaultdict(list)
     # tuple = (direct_compromised, gateway_compromised, gateway_blocked)
+    direct_errors = gateway_errors = 0
 
     for case in attacks:
-        d_comp = judge.compromised(case, direct(case.text))
+        d_resp = direct(case.text)
+        if d_resp is None:  # upstream error — not a refusal; don't silently score "attack failed"
+            direct_errors += 1
+        d_comp = judge.compromised(case, d_resp or "")
         g = gateway(case.text)
+        if g.errored:
+            gateway_errors += 1
         g_comp = (not g.blocked) and judge.compromised(case, g.response or "")
         by_class[case.attack_class].append((d_comp, g_comp, g.blocked))
 
@@ -175,14 +190,25 @@ def run_ab(
         intercept_gateway=_safe_ratio(tot_block, tot_n),
     )
 
-    blocked_benign = sum(1 for text in benign if gateway(text).blocked)
-    fpr = _safe_ratio(blocked_benign, len(benign))
+    # FPR/utility over benign requests that got a response (errors excluded, then reported).
+    blocked_benign = benign_errors = 0
+    for text in benign:
+        outcome = gateway(text)
+        if outcome.errored:
+            benign_errors += 1
+        elif outcome.blocked:
+            blocked_benign += 1
+    responded_benign = len(benign) - benign_errors
+    fpr = _safe_ratio(blocked_benign, responded_benign)
     return ABReport(
         per_class=per_class,
         overall=overall,
         fpr_gateway=fpr,
         utility_gateway=1.0 - fpr,
-        n_benign=len(benign),
+        n_benign=responded_benign,
+        direct_errors=direct_errors,
+        gateway_errors=gateway_errors,
+        benign_errors=benign_errors,
     )
 
 
@@ -208,6 +234,13 @@ def format_report(report: ABReport) -> str:
         f"benign: n={report.n_benign}  FPR_gateway={report.fpr_gateway:.2f}  "
         f"utility={report.utility_gateway:.2f}",
     ]
+    if report.direct_errors or report.gateway_errors or report.benign_errors:
+        lines += [
+            "",
+            f"⚠ upstream errors (excluded, NOT scored as defended): direct={report.direct_errors} "
+            f"gateway={report.gateway_errors} benign={report.benign_errors} — ASR/FPR of 0 may be "
+            f"an Odysseus-failure artifact, not a real refusal. Re-run when the target is healthy.",
+        ]
     if report.skipped:
         lines += ["", "skipped (not silently dropped):", *(f"  - {s}" for s in report.skipped)]
     return "\n".join(lines)
@@ -291,18 +324,18 @@ def build_live_arms(config, *, use_ml: bool = False) -> tuple[DirectArm, Gateway
     engine = default_engine(AuditLog("ab_harness_audit.jsonl"), pi_detector=pi_detector)
     guarded = GuardedOdysseusClient(client, engine)
 
-    def direct(text: str) -> str:
+    def direct(text: str) -> str | None:
         try:
             data = client.chat(text)
         except OdysseusError:
-            return ""  # transport/4xx error is not an attack success
+            return None  # upstream error — signal it, don't fake an empty refusal-looking response
         return data.get("response", "") if isinstance(data, dict) else str(data)
 
     def gateway(text: str) -> GatewayOutcome:
         try:
             reply = guarded.chat(text)
         except OdysseusError:
-            return GatewayOutcome(blocked=False, stage="error", response="")
+            return GatewayOutcome(blocked=False, stage="error", response="", errored=True)
         return GatewayOutcome(blocked=not reply.allowed, stage=reply.stage, response=reply.output)
 
     return direct, gateway

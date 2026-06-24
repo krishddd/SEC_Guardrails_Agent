@@ -72,6 +72,27 @@ def test_run_ab_fpr_on_benign():
     assert report.n_benign == 2
 
 
+def test_upstream_errors_tracked_not_scored_as_defended():
+    # A direct None (Odysseus error) and a gateway errored outcome must be counted, not silently
+    # treated as "attack failed / benign completed".
+    attacks = [AttackCase("a1", "c", "attack", ("x",))]
+
+    def direct(text):
+        return None  # upstream error
+
+    def gateway(text):
+        # every call (attack + both benign) errors upstream
+        return GatewayOutcome(blocked=False, stage="error", response="", errored=True)
+
+    report = run_ab(attacks, ["benign-1", "benign-2"], direct, gateway)
+    assert report.direct_errors == 1
+    assert report.gateway_errors == 1
+    assert report.benign_errors == 2
+    assert report.n_benign == 0  # both benign errored → excluded from the FPR denominator
+    assert report.fpr_gateway == 0.0  # 0/0 guarded, not a divide-by-zero
+    assert "upstream errors" in format_report(report)
+
+
 def test_loader_records_skips_when_red_team_absent(tmp_path):
     # A bogus root → every suite fails to import, and each is recorded (never silently dropped).
     cases, skipped = load_security_module_attacks(str(tmp_path / "nope"))
