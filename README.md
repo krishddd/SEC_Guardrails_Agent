@@ -1,7 +1,7 @@
 # SEC_Guardrails_Agent
 
 [![CI](https://github.com/krishddd/SEC_Guardrails_Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/krishddd/SEC_Guardrails_Agent/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-TBD-lightgrey.svg)](#license)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](pyproject.toml)
 
 Defensive, build-from-scratch **7-layer runtime guardrails** for the **Odysseus** autonomous agent
