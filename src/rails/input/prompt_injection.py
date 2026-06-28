@@ -26,16 +26,47 @@ class Detector(Protocol):
 # Cheap first-line markers for direct injection / jailbreaks (Reference §3.2).
 _HEURISTIC_PATTERNS = [
     r"ignore (?:all |the |your )?(?:previous|prior|above) (?:instructions|prompts?|context)",
+    # "ignore/disregard all rules/safety/guidelines" — not just "instructions" (D1: indirect data).
+    r"(?:ignore|disregard|forget|bypass|override) (?:all |any |the |your )?"
+    r"(?:previous |prior |above )?"
+    r"(?:rules|safety|guidelines?|polic(?:y|ies)|restrictions|filters?)",
     r"disregard (?:all |the |your )?(?:previous|prior|above)",
     r"forget (?:everything|all|your) (?:instructions|rules|prompts?)",
     r"you are now (?:a |an )?(?:dan\b|developer mode|unrestricted)",
     r"developer mode",
     r"\bdo anything now\b",
-    r"(?:reveal|print|show|repeat) (?:me )?(?:the |your )?(?:system prompt|instructions|prompt)",
+    # Instruction/configuration extraction — flexible verb→target gap (D1: catches "output your
+    # complete configuration", "reveal the instructions"); plus "what is your …" / verbatim forms.
+    r"\b(?:reveal|print|show|repeat|output|dump|return|display|expose|leak)\b"
+    r"[\w' ]{0,25}\b(?:system prompt|configuration|instructions|directives|guidelines)\b",
+    r"what (?:is|are) your (?:system prompt|instructions|configuration|directives)",
+    r"system prompt\b[\w' ]{0,20}\bverbatim\b|verbatim\b[\w' ]{0,20}system prompt",
     r"</?(?:system|instructions?)>",  # forged role/markup tags
+    r"\[/?(?:system|inst|instructions?)\]",  # bracketed forged tags
+    r"<\|?(?:im_start|system|endofprompt)\|?>",  # chat-template spoofing
     r"new instructions:\s",
     r"\boverride\b.{0,20}\b(?:safety|guardrails?|rules)\b",
+    # D1: "important instructions" injection framing (AgentDojo / indirect-via-data).
+    r"before you (?:can )?(?:solve|continue|proceed|answer|begin|complete|do)\b",
+    r"this is an important (?:message|instruction|update|note|system)",
 ]
+
+# D1: persona-shift triggers and bypass/privilege markers. A persona trigger CO-OCCURRING with a
+# bypass marker is a high-confidence role-reassignment signal with low FPR (a benign roleplay rarely
+# also demands unrestricted/admin/no-rules). Scored as a strong combined hit below.
+_PERSONA_TRIGGER = re.compile(
+    r"\b(?:you are now|act as|acting as|pretend(?:ing)? (?:to be|you(?:'re| are))|"
+    r"roleplay(?:ing)? as|from now on,? you|your new (?:role|persona|identity)|"
+    r"you (?:must|will) (?:now )?(?:act|behave|respond|pretend))\b",
+    re.IGNORECASE,
+)
+_BYPASS_MARKER = re.compile(
+    r"\b(?:full access|unrestricted|uncensored|unfiltered|jailbroken|do anything|dan\b|"
+    r"no (?:rules|safety|restrictions|limits|filter)|"
+    r"without (?:any )?(?:restrictions?|safety|validation|sanitization|filtering|checks?)|"
+    r"admin(?:istrator)?|root access|bypass|raw queries)\b",
+    re.IGNORECASE,
+)
 
 
 # Leetspeak fold for adaptive-evasion resistance (T35).
@@ -62,6 +93,11 @@ class HeuristicDetector:
         # Check the raw text AND a normalized variant (defeats spacing/leet/punctuation evasion).
         variants = (text, _normalize(text))
         hits = sum(1 for rx in self._rx if any(rx.search(v) for v in variants))
+        # D1: a persona shift demanding a bypass/privilege is a strong role-reassignment signal.
+        persona = any(_PERSONA_TRIGGER.search(v) for v in variants)
+        bypass = any(_BYPASS_MARKER.search(v) for v in variants)
+        if persona and bypass:
+            hits += 2
         if hits == 0:
             return 0.0
         return min(0.7 + 0.25 * (hits - 1), 0.99)  # 1 hit→0.70, 2→0.95, 3+→0.99
