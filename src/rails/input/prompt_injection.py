@@ -69,6 +69,17 @@ _BYPASS_MARKER = re.compile(
 )
 
 
+# D2: weak (gray-band) markers — suspicious but not conclusive on their own. When one of these is
+# present and no HARD pattern fired, the heuristic returns GRAY_SCORE so a conditional second stage
+# (EscalatingDetector) can escalate just this ambiguous middle to the expensive model.
+_WEAK_MARKERS = re.compile(
+    r"\b(?:system prompt|your instructions|system tables|hidden (?:tables|schema)|"
+    r"your (?:rules|guidelines|configuration|directives)|jailbreak|do anything)\b",
+    re.IGNORECASE,
+)
+GRAY_SCORE = 0.4  # below the 0.6 block threshold → never blocks alone, only flags for escalation
+
+
 # Leetspeak fold for adaptive-evasion resistance (T35).
 _LEET = str.maketrans(
     {"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"}
@@ -98,9 +109,49 @@ class HeuristicDetector:
         bypass = any(_BYPASS_MARKER.search(v) for v in variants)
         if persona and bypass:
             hits += 2
-        if hits == 0:
-            return 0.0
-        return min(0.7 + 0.25 * (hits - 1), 0.99)  # 1 hit→0.70, 2→0.95, 3+→0.99
+        if hits:
+            return min(0.7 + 0.25 * (hits - 1), 0.99)  # 1 hit→0.70, 2→0.95, 3+→0.99
+        # D2: no hard hit — a weak/ambiguous signal returns the gray score (escalate, don't block).
+        weak = (persona and not bypass) or any(_WEAK_MARKERS.search(v) for v in variants)
+        return GRAY_SCORE if weak else 0.0
+
+
+class EscalatingDetector:
+    """D2 — conditional second-stage detection. Runs a cheap `primary` (heuristic) inline; only when
+    its score lands in the GRAY BAND `[gray_low, gray_high)` does it call the expensive `secondary`
+    (e.g. deberta-v3). Confident-clean (<gray_low) and confident-injection (>=gray_high) skip the
+    model entirely, so the heavy detector runs on a small fraction of turns — most of the ML recall
+    at a fraction of the latency (T7/SC3). `escalations`/`calls` expose the escalation rate.
+    """
+
+    name = "escalating"
+
+    def __init__(
+        self,
+        primary: Detector,
+        secondary: Detector,
+        *,
+        gray_low: float = 0.35,
+        gray_high: float = 0.6,
+    ):
+        self.primary = primary
+        self.secondary = secondary
+        self.gray_low = gray_low
+        self.gray_high = gray_high
+        self.calls = 0
+        self.escalations = 0
+
+    def score(self, text: str) -> float:
+        self.calls += 1
+        p = self.primary.score(text)
+        if p >= self.gray_high or p < self.gray_low:
+            return p  # confident either way — no model call
+        self.escalations += 1
+        return self.secondary.score(text)
+
+    @property
+    def escalation_rate(self) -> float:
+        return (self.escalations / self.calls) if self.calls else 0.0
 
 
 class PromptInjectionRail(Rail):
@@ -140,3 +191,11 @@ def load_deberta_detector(
             return prob if is_injection else 1.0 - prob
 
     return _DebertaDetector()
+
+
+def load_escalating_detector(**kwargs) -> EscalatingDetector:
+    """D2 — the recommended ML wiring: heuristic primary + deberta-v3 secondary, escalating only the
+    gray band. Far cheaper than running deberta on every turn (T7/SC3) at comparable recall. Pass to
+    `default_engine(audit, pi_detector=load_escalating_detector())`.
+    """
+    return EscalatingDetector(HeuristicDetector(), load_deberta_detector(), **kwargs)

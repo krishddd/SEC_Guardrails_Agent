@@ -30,10 +30,15 @@ injection-framing the current patterns miss:
 **Done:** recall lift on `Security_module` role_reassignment/indirect/jailbreak measured offline
 (`evaluate_blocking_rail`), **FPR unchanged (0)** on the benign corpus. Deterministic, no model.
 
-### D2 — Conditional second-stage detector (latency + recall)
+### D2 — Conditional second-stage detector *(DONE — `EscalatingDetector`)*
 Run the cheap heuristic inline; invoke deberta/PromptGuard only on **gray-band** inputs (heuristic
-score in [lo, hi]). Recovers most ML recall while paying the 323 ms (T7/SC3) on a fraction of turns.
-Input layer, model-based-on-demand.
+score in `[gray_low, gray_high)`). A new weak/gray tier in the heuristic (`GRAY_SCORE=0.4` for lone
+persona / internal-probing markers) feeds it. `load_escalating_detector()` wires heuristic→deberta.
+**Measured:** ordinary benign **escalation 0.00** (deberta never runs → zero added latency on the
+common case); jailbreak recall **0.33→0.67** by escalating the gray band; D1 hard-blocks skip the
+model. Confident-clean and confident-injection never call the model. Lone benign roleplay ("act as a
+translator") *does* escalate (ambiguous) but the model clears it → no FPR, only latency. CI-safe
+tests (fake secondary). Input layer, model-on-demand.
 
 ### D3 — Stronger detector / ensemble
 Add Meta **PromptGuard 2 (86M)** as a selectable backend and an **ensemble = max(heuristic, model)**.
