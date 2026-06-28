@@ -21,6 +21,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+# Windows consoles default to cp1252 and choke on report glyphs; never let a print lose the run.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 from core.config import load_config  # noqa: E402
 from eval.ab_harness import (  # noqa: E402
     build_live_arms,
@@ -56,14 +60,15 @@ def main() -> int:
     elapsed = time.time() - t0
 
     text = format_report(report)
-    print("\n" + text + f"\n\n[ab] {len(attacks)} attacks in {elapsed:.1f}s")
 
+    # Write FIRST — a console-encoding error must never discard a live run.
     out_dir = ROOT / "docs" / "eval"
     out_dir.mkdir(parents=True, exist_ok=True)
     suffix = "_ml" if use_ml else ""  # keep the heuristic baseline alongside the ML run
     report_json = json.dumps(report.as_dict(), indent=2)
     (out_dir / f"ab_report{suffix}.json").write_text(report_json, encoding="utf-8")
     (out_dir / f"ab_report{suffix}.txt").write_text(text + "\n", encoding="utf-8")
+    print("\n" + text + f"\n\n[ab] {len(attacks)} attacks in {elapsed:.1f}s")
     print(f"[ab] wrote {out_dir / f'ab_report{suffix}.json'} and ab_report{suffix}.txt")
     return 0
 

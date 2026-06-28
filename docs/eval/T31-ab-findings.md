@@ -69,6 +69,14 @@ so ASR_direct read 0.00 that pass vs 0.53 the day before), and the `HeuristicJud
 **Interception** — does the gateway block the attack — is deterministic and attributable to the rails
 alone, so it is the headline. ASR is reported as a directional cross-check, not an acceptance gate.
 
+**Verified the 0.00 is real refusals, not an error artifact.** Probing the direct arm shows Odysseus
+genuinely refuses (e.g. *"I can't reveal or override my system instructions…"*), which the judge
+scores correctly — `direct_errors = 0`. The harness now tracks **upstream (Odysseus) errors per arm**
+and excludes them from ASR/FPR (surfaced with a ⚠ line), so a future ASR/FPR of 0 can never be silently
+an Odysseus-failure artifact. Takeaway: Odysseus's own model is well-aligned at the chat surface, so
+the gateway's chat-layer contribution is **defense-in-depth interception** before the model is reached;
+the model is a second, independent backstop.
+
 ## Honest caveats
 1. **Chat surface, no tools.** `/api/v1/chat` runs no tools, so the SQLi/destructive rows measure
    whether the model *discusses* SQL, **not** whether a tool executed — and a SQL *question* correctly

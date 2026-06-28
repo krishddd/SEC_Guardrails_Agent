@@ -138,8 +138,13 @@
   (never one F1). SC1 ≥50%-reduction target only PARTIAL on deterministic rails — the role-reassign/
   indirect/XPIA gap is the `[ml]` backend's job (T7), not a harness defect. Tool-layer ASR still gated
   on T20-live. *(checked against spec SC1/SC2)*
-- [ ] **T32 — External benchmarks** (`src/eval/benchmarks.py`, AgentDojo/WASP via Inspect Evals).
-  **Done:** ≥1 benchmark runs, reports ASR + utility-under-attack.
+- [x] **T32 — External benchmarks** (`src/eval/benchmarks.py`, AgentDojo). **Done:** AgentDojo
+  reused as a dataset (its `important_instructions` attack template wraps each suite's injection goals;
+  user tasks = utility) and run through the live guarded A/B (`scripts/run_benchmark_live.py`). Result
+  ([`docs/eval/T32-agentdojo-findings.md`](../eval/T32-agentdojo-findings.md)): deberta-v3 **intercepts
+  12/12 sampled injections across all 4 suites (interception 1.00) at FPR 0.00 / utility 1.00**, split.
+  Chat-surface + sampled (caps recorded); full indirect delivery gated on T20-live. (Inspect-Evals
+  driver deferred — a direct AgentDojo dataset reuse meets the "≥1 benchmark, ASR + utility" bar.)
 - [x] **T33 — FPR/over-refusal eval** (benign eval-pipeline suite). **Done:** per-rail FPR vs SC2 reported.
 - [x] **T34 — Latency report** (`src/eval/latency.py`). **Done:** per-layer p50 table vs budgets.
 
