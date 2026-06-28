@@ -154,6 +154,30 @@ class EscalatingDetector:
         return (self.escalations / self.calls) if self.calls else 0.0
 
 
+class EnsembleDetector:
+    """D3 — combine detectors and take the MAX score (logical OR of "is this an injection?").
+
+    Recall is monotonically ≥ any single member, so adding a detector can only catch *more* —
+    at the cost of FPR being the union of members' false positives (keep members high-precision) and
+    latency being the sum (use the deterministic heuristic + at most one model, or wrap in
+    `EscalatingDetector` for the conditional-cost version). `last_scores` aids triage.
+    """
+
+    name = "ensemble"
+
+    def __init__(self, detectors: list[Detector]):
+        if not detectors:
+            raise ValueError("EnsembleDetector needs at least one detector")
+        self.detectors = detectors
+        self.last_scores: dict[str, float] = {}
+
+    def score(self, text: str) -> float:
+        # Max over the LIST (not the dict) so detectors sharing a name don't collapse the result.
+        scored = [(d.name, d.score(text)) for d in self.detectors]
+        self.last_scores = dict(scored)  # for triage/display; may collapse same-named members
+        return max(score for _, score in scored)
+
+
 class PromptInjectionRail(Rail):
     name = "prompt_injection"
 
@@ -199,3 +223,41 @@ def load_escalating_detector(**kwargs) -> EscalatingDetector:
     `default_engine(audit, pi_detector=load_escalating_detector())`.
     """
     return EscalatingDetector(HeuristicDetector(), load_deberta_detector(), **kwargs)
+
+
+def load_promptguard_detector(
+    model: str = "meta-llama/Llama-Prompt-Guard-2-86M",
+) -> Detector:
+    """D3 — Meta Llama PromptGuard 2 (86M) backend; strong on injection incl. indirect. Lazy-imports
+    transformers (`ml` extra). NOTE: the model repo is **HF-gated** (Llama license) — needs an
+    accepted license + `HF_TOKEN`; if unavailable it raises, so call it behind a try/except.
+    """
+    from transformers import pipeline  # lazy: heavy dep
+
+    clf = pipeline("text-classification", model=model, truncation=True)
+
+    class _PromptGuardDetector:
+        name = "promptguard-2"
+
+        def score(self, text: str) -> float:
+            out = clf(text)[0]
+            label = str(out["label"]).upper()
+            prob = float(out["score"])
+            # PromptGuard 2 labels: LABEL_1 / "MALICIOUS" = injection, LABEL_0 / "BENIGN" = clean.
+            is_injection = label in ("LABEL_1", "1", "MALICIOUS", "INJECTION", "JAILBREAK")
+            return prob if is_injection else 1.0 - prob
+
+    return _PromptGuardDetector()
+
+
+def load_ensemble_detector(*, use_deberta: bool = True, use_promptguard: bool = False) -> Detector:
+    """D3 — heuristic (D1) ∪ model detectors, MAX-combined for best recall. deberta on by default;
+    PromptGuard 2 opt-in (HF-gated). Wrap the result in `EscalatingDetector` if you need the model
+    calls to be conditional. Pass to `default_engine(audit, pi_detector=load_ensemble_detector())`.
+    """
+    detectors: list[Detector] = [HeuristicDetector()]
+    if use_deberta:
+        detectors.append(load_deberta_detector())
+    if use_promptguard:
+        detectors.append(load_promptguard_detector())
+    return EnsembleDetector(detectors)

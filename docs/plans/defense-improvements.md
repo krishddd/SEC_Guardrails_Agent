@@ -40,9 +40,23 @@ model. Confident-clean and confident-injection never call the model. Lone benign
 translator") *does* escalate (ambiguous) but the model clears it → no FPR, only latency. CI-safe
 tests (fake secondary). Input layer, model-on-demand.
 
-### D3 — Stronger detector / ensemble
-Add Meta **PromptGuard 2 (86M)** as a selectable backend and an **ensemble = max(heuristic, model)**.
-PromptGuard 2 targets injection incl. indirect; ensemble raises recall over any single detector.
+### D3 — Stronger detector / ensemble *(DONE — `EnsembleDetector`)*
+`EnsembleDetector([...])` MAX-combines detectors (logical OR) so recall is monotonically ≥ any single
+member; `load_ensemble_detector()` wires heuristic ∪ deberta (∪ PromptGuard 2, opt-in).
+`load_promptguard_detector()` adds Meta **PromptGuard 2 (86M)** — shipped, but the repo is **HF-gated**
+(Llama license + `HF_TOKEN`; returns 403 without access, so it's behind try/except and not measured
+here). **Measured ensemble(heuristic ∪ deberta)** vs members, FPR 0.00:
+
+| class | heuristic | deberta | ensemble |
+|---|--:|--:|--:|
+| role_reassignment | 1.00 | 0.33 | **1.00** |
+| jailbreak | 0.33 | 0.33 | **0.67** (union — each catches a different one) |
+| extraction | 1.00 | 0.67 | **1.00** |
+| indirect | 0.50 | 0.50 | 0.50 |
+
+The D1 heuristic now *beats* deberta alone on role/extraction; the ensemble captures the max for free
+on the deterministic side and the union win on jailbreak. CI-safe tests (fake members). For
+conditional latency, wrap the ensemble in `EscalatingDetector` (D2).
 
 ### D4 — Scan tool/retrieval OUTPUTS with the input PI rail + spotlight *(biggest indirect/XPIA lever)*
 Today the PI rail runs only on user input. Route **tool results and retrieved chunks** through the
