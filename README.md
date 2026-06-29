@@ -82,18 +82,23 @@ research/ → docs/specs/ → docs/architecture/ (+adr) → docs/plans/ → code
 ## Quickstart
 
 ```bash
-# 1. Install (control plane only; Rust core + ML detectors are extras)
-python -m pip install -e ".[dev]"
+# 1. Install (control plane; Rust core + ML detectors are extras)
+python -m pip install -e ".[dev]"          # add ".[ml]" for deberta/Presidio, ".[bench]" for AgentDojo
 
-# 2. Run the test suite
-pytest -q
+# 2. Tests + lint
+pytest -q                                   # 230+ pass; Rust↔Python parity runs in CI
 ruff check . && ruff format --check .
 
-# 3. Run the offline Odysseus stub (Odysseus itself is a separate Docker service)
-uvicorn tests.stub_agent.app:app --port 7000
+# 3. See every layer fire end-to-end (no external services needed)
+python scripts/demo.py
 
-# (later) run the gateway in front of it
-# uvicorn gateway.app:app --port 7100
+# 4. Run the guardrail gateway on :7100 in front of Odysseus :7000
+python scripts/run_gateway.py
+#    → point Odysseus at it: GUARDRAIL_TRACE_URL=http://localhost:7100/api/_trace
+
+# 5. Live A/B (red-team direct vs via the engine) and the AgentDojo benchmark
+python scripts/run_ab_live.py               # AB_USE_ML=1 to use the deberta backend
+python scripts/run_benchmark_live.py
 ```
 
 Configuration is via environment variables (see [`.env.example`](.env.example)); `.env` is never
@@ -111,28 +116,48 @@ before use**.
 | `src/gateway/` | FastAPI reverse-proxy gateway (`:7100`) |
 | `src/rails/` | Rail implementations (input/dialog/output/tool/memory/reasoning/multiagent/oversight) |
 | `src/core/` | Rail framework, config, audit, observability |
-| `src/eval/` | A/B attack harness, benchmark drivers, latency/FPR reporting |
-| `crates/guardrails-core/` | Rust security core (PyO3/maturin) — *lands at T6b* |
-| `web/` | TypeScript/React HITL + dashboard — *Phase 9* |
+| `src/eval/` | A/B attack harness, AgentDojo benchmark driver, latency/FPR reporting |
+| `src/agent/` | Reference tool-executing agent that runs *under* the engine (in-process trace) |
+| `docs/eval/` | Measured A/B, benchmark, latency, and defense-upgrade results |
+| `crates/guardrails-core/` | Rust security core (PyO3/maturin → `guardrails_core`) |
+| `web/` | TypeScript/React HITL approval + observability dashboard |
 | `tests/` | Unit + adversarial fixtures, offline Odysseus stub |
 | `.claude/` | Skills, subagents, pre-edit guard hook, settings |
 
-## Evaluation
+## Evaluation & results
 
-Security metrics are always reported **split** — Attack Success Rate (ASR) and false-positive /
-utility separately, **never a single blended F1**. The A/B harness runs the Security_module attacks
-direct vs. through the gateway and checks against the thresholds in
-[`docs/specs/odysseus-guardrails-spec.md`](docs/specs/odysseus-guardrails-spec.md); external benchmarks
-(AgentDojo, WASP) run via Inspect Evals.
+Security metrics are always reported **split** — Attack Success Rate (ASR) / interception and
+false-positive (FPR) / utility separately, **never a single blended F1**. The A/B harness runs the
+Security_module attacks direct vs. through the gateway against live Odysseus; AgentDojo runs as a
+reused external benchmark. Full write-ups in [`docs/eval/`](docs/eval/).
 
-## Status & roadmap
+**Measured against live Odysseus** (interception = fraction of attacks hard-blocked; the deterministic,
+attributable metric):
 
-- ✅ **Phase A** — research-doc pipeline (skills, subagents, hook, CI)
-- ✅ **Phase B** — spec, exploration, architecture + ADRs 0001–0007, plan `T1–T40`
-- ✅ **Scaffold** — Python package, offline stub agent, smoke tests
-- 🔜 **Phase C** — foundations (config, client, rail framework, gateway, observability), then the rails
+| suite | metric | result |
+|---|---|---|
+| Security_module (red-team) | overall interception, heuristic → ML | **0.19 → 0.47** |
+| Security_module | role-reassignment interception (after detector upgrade) | **0.00 → 1.00** |
+| AgentDojo (banking/slack/travel/workspace) | injection interception | **1.00** (12/12) |
+| all suites | **FPR / over-refusal** | **0.00** |
+| indirect injection (XPIA) via a poisoned tool result | caught at the gateway, live | ✅ |
 
-Track progress in [`docs/plans/odysseus-guardrails-plan.md`](docs/plans/odysseus-guardrails-plan.md).
+Latency: deterministic input rails < 15 ms p50; the ML detector (deberta-v3, 323 ms CPU) runs only on
+gray-band inputs via a conditional second stage, so benign traffic pays ~0 (see
+[`docs/architecture/T7-latency-spike.md`](docs/architecture/T7-latency-spike.md)).
+
+## Status
+
+- ✅ **Foundations, all 7 rail layers, Rust core, React HITL/dashboard, CI** — the full safety net.
+- ✅ **Unified `GuardrailEngine`** + reference guarded agent; agent-agnostic `guard_*` API.
+- ✅ **Live integration** — `:7100` gateway fronting Odysseus; tool-trace ingest (`/api/_trace`),
+  live A/B (Security_module) and AgentDojo benchmark, latency spike with real ML models.
+- ✅ **Defense R&D (D1–D5)** — detector recall upgrade, conditional second stage, ensemble +
+  PromptGuard 2 backend, and tool-output (indirect/XPIA) scanning proven live.
+
+Run `python scripts/demo.py` to watch every layer fire end-to-end. Track detail in
+[`docs/plans/odysseus-guardrails-plan.md`](docs/plans/odysseus-guardrails-plan.md) and the defense
+roadmap in [`docs/plans/defense-improvements.md`](docs/plans/defense-improvements.md).
 
 ## Security
 
