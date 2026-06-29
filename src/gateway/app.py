@@ -118,11 +118,19 @@ def create_app(
                 return {"decision": "observe", "stage": "ingest", "reason": "no engine wired"}
             # Detective: guard_tool already audits; the tool has already run, so we only surface it.
             verdict = engine.guard_tool(call, now=time.time())
-            return {
+            response = {
                 "decision": verdict.effect.value,
                 "stage": verdict.stage,
                 "reason": verdict.reason,
                 "tool": call.name,
             }
+            # D4: also scan the tool RESULT for indirect injection (XPIA) before it re-enters the
+            # model — the highest-value signal in a real trace. Surfaced alongside the call verdict.
+            if isinstance(event.result, str) and event.result:
+                out = engine.guard_tool_output(event.result, source=f"tool:{call.name}")
+                response["output_decision"] = "block" if not out.allowed else "allow"
+                if not out.allowed:
+                    response["output_reason"] = out.reason
+            return response
 
     return app
