@@ -22,19 +22,21 @@ one `/implement` unit, ends with **passing tests** + a **checked box**, reports 
 
 ---
 
-## N1 — Function-call schema/argument validation rail (L4)
+## N1 — Function-call schema/argument validation rail (L4)  ✅ DONE (2026-06-30)
 *Granite Guardian 4.x "function-calling hallucination", deterministic version.*
 
-- [ ] **N1.1** Add `src/rails/tool/arg_schema.py` — a `ToolArgSchemaRail` that, given a registry of
-  declared tool signatures (name → required args, types, optional value-domains), flags a `ToolCall`
-  whose args have **unknown names**, **missing required**, or **type-mismatched values**. Pure-Python,
-  deterministic, no model. Decision: `BLOCK` (hard schema violation) vs `HITL` (suspicious value).
-- [ ] **N1.2** Wire into `GuardrailEngine.guard_tool` *before* the egress/taint checks (cheap, fail
-  fast). Add a `tool_schemas` field on `default_engine` (defaults to the reference agent's tools).
-- [ ] **N1.3** Tests: malformed call blocked; valid call passes; type-mismatch (e.g. `calc.expr=42`
-  as int where str expected) flagged. Report interception on a synthetic malformed-call set + FPR on
-  the benign tool-call corpus.
-- **Defends:** tool/action misuse, hallucinated tool calls. **Effort:** S.
+- [x] **N1.1** Added `src/rails/tool/arg_schema.py` — `ToolArgSchemaRail` + `ToolSchema`. Validates a
+  `ToolCall` against the declared signature: **missing required** → BLOCK, **type conflict** → BLOCK,
+  **out-of-domain value** → HITL, **unknown arg name** → HITL *(only when the schema is `strict`)*.
+  Pure-Python, deterministic, no model. Unknown tool → no opinion (other rails decide).
+- [x] **N1.2** Wired into `GuardrailEngine.guard_tool` right after the exec-gate (cheap, fail-fast),
+  before egress/taint. `default_engine` gains a `tool_schemas` param (defaults to
+  `default_tool_schemas()` — the reference agent's calc/echo/bash/sql/http_fetch signatures).
+- [x] **N1.3** Tests in `tests/test_arg_schema.py`: missing-required & type-conflict blocked, valid
+  allowed, out-of-domain/strict-unknown → HITL, **extra `content` key ignored when non-strict** (zero
+  FPR on the gateway arg-mapping), engine integration. Full suite 263 passed; ruff clean.
+- **Defends:** tool/action misuse, hallucinated tool calls. **Effort:** S. **FPR:** 0 on existing
+  flows (verified — gateway trace + agent e2e tests unchanged).
 
 ## N2 — Token-level tool-output sanitization (L5×L1)  ⭐ first
 *CommandSans — surgical strip of injected-instruction spans, not block-all.*
