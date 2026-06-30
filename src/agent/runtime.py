@@ -95,7 +95,13 @@ class GuardedAgent:
                 outputs.append(f"[awaiting approval for {call.name}]")
             else:
                 tool = self.tools.get(verdict.call.name)
-                ran = tool.run(verdict.call.args) if tool else f"[no such tool {call.name}]"
+                if tool is None:
+                    ran = f"[no such tool {call.name}]"
+                else:
+                    try:
+                        ran = tool.run(verdict.call.args)
+                    except Exception as exc:  # a tool failure is data, never a crash of the turn
+                        ran = f"[tool error {verdict.call.name}: {type(exc).__name__}: {exc}]"
                 # D4: the tool result is UNTRUSTED — scan it for indirect injection (XPIA) before it
                 # re-enters the model's context. A poisoned result is dropped, not propagated.
                 scanned = self.engine.guard_tool_output(ran, source=f"tool:{verdict.call.name}")
