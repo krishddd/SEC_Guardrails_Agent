@@ -24,7 +24,11 @@ def _safe_calc(expr: str) -> float:
         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
             return node.value
         if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
-            return _OPS[type(node.op)](ev(node.left), ev(node.right))
+            left, right = ev(node.left), ev(node.right)
+            # Bound exponentiation — `9**9**9**9` would otherwise hang/OOM this "safe" evaluator.
+            if isinstance(node.op, ast.Pow) and (abs(right) > 1000 or abs(left) > 1_000_000):
+                raise ValueError("exponent out of range")
+            return _OPS[type(node.op)](left, right)
         if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
             return _OPS[type(node.op)](ev(node.operand))
         raise ValueError("unsupported expression")

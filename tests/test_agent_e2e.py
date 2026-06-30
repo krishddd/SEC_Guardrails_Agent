@@ -76,6 +76,20 @@ def test_output_canary_leak_blocked(tmp_path):
     assert r.blocked
 
 
+def test_tool_error_does_not_crash_turn(tmp_path):
+    # A failing tool (division by zero / unsupported expr) is reported as data, not a crash.
+    r = _agent(tmp_path).handle("calc: 1/0")
+    assert not r.blocked
+    assert "[tool error calc" in r.output
+
+
+def test_calc_rejects_exponent_dos(tmp_path):
+    # `_safe_calc` bounds `**` so a billion-digit power can't hang the "safe" evaluator.
+    r = _agent(tmp_path).handle("calc: 9**9**9**9")
+    assert not r.blocked
+    assert "[tool error calc" in r.output  # ValueError("exponent out of range"), caught and reported
+
+
 def test_audit_trail_is_written(tmp_path):
     audit = AuditLog(tmp_path / "audit.jsonl")
     GuardedAgent(default_engine(audit)).handle("calc: 1 + 1")
