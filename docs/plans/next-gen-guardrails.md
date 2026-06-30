@@ -119,6 +119,10 @@ trajectory review. NOT on the hot path; one vote in defense-in-depth, never the 
 - [x] **N8.4** Tests in `tests/test_llm_critic.py` (fake client): verdict parsing incl. prose
   tolerance, `temperature=0` + delimited-untrusted request shape, fail-open/closed, engine
   integration. Full suite green; ruff clean. **Effort:** M.
+- [x] **N8.5** Live wiring: `GuardedOdysseusClient.chat` now runs the L7 oversight step (so the
+  critic actually fires in the live A/B + gateway path, not just the reference agent); `run_gateway`
+  enables it via `GATEWAY_LLM_CRITIC=1` (never fatal — degrades to no critic if the key/extra is
+  missing). Test: `test_oversight_critic_fires_on_reply`.
 - **Defends:** goal-drift / unsafe-trajectory oversight with semantic judgment the deterministic
   `HeuristicCritic` can't provide. **Caveat:** external data egress — content is post-output-guard
   (already redacted/sanitized); rotate any shared key. **Note:** opt-in; default engine unchanged.
