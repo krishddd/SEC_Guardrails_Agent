@@ -25,6 +25,7 @@ from typing import Any
 
 from core.engine import GuardrailEngine, ToolVerdict
 from core.rail import TrustLevel
+from rails.oversight.critic import Trajectory
 from rails.tool.policy import Effect, ToolCall
 
 from .odysseus_client import OdysseusClient
@@ -105,6 +106,12 @@ class GuardedOdysseusClient:
             return GuardedReply(
                 False, None, gout.reason, "output", tool_findings=findings, raw=data
             )
+
+        # 5) L7 oversight (detective) — fires the configured critic (e.g. the N8 LLM judge) on the
+        # final trajectory; advisory, so it never blocks the reply, but the verdict is audited.
+        self.engine.review(
+            Trajectory(task=message, steps=[f.tool for f in findings], output=gout.text or "")
+        )
 
         return GuardedReply(
             True,

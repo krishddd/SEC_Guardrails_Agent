@@ -94,6 +94,26 @@ def test_no_trace_no_findings(tmp_path):
     assert reply.tool_findings == []
 
 
+def test_oversight_critic_fires_on_reply(tmp_path):
+    # N8: a configured critic is invoked on the final trajectory (detective; never blocks).
+    from rails.oversight.critic import Verdict
+
+    seen = {}
+
+    class _RecCritic:
+        name = "rec"
+
+        def review(self, traj):
+            seen["traj"] = traj
+            return Verdict(True, "ok")
+
+    g = _guarded(tmp_path, _echo, critic=_RecCritic())
+    reply = g.chat("what's the weather today?")
+    assert reply.allowed  # advisory — the critic does not block
+    assert seen["traj"].task == "what's the weather today?"
+    assert "weather" in seen["traj"].output  # the reviewed text is the guarded reply
+
+
 def test_input_trust_is_configurable(tmp_path):
     transport = httpx.MockTransport(_echo)
     hc = httpx.Client(transport=transport)
