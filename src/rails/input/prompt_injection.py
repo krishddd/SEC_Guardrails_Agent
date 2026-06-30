@@ -94,11 +94,50 @@ def _normalize(text: str) -> str:
     return t
 
 
+# Compiled once at module load — reused by the rail detector AND the tool-output sanitizer (N2).
+_HEURISTIC_RX = [re.compile(p, re.IGNORECASE) for p in _HEURISTIC_PATTERNS]
+
+# N2 — surgical tool-output sanitization (CommandSans, arXiv 2510.08829). Split untrusted tool
+# output into sentence/line spans and drop only the spans carrying an injected instruction.
+_SPAN_SPLIT = re.compile(r"(?<=[.!?])\s+|\r?\n+")
+
+
+def _span_is_injection(span: str) -> bool:
+    """True when a span carries an instruction/injection signal (same basis as the heuristic)."""
+    if not span.strip():
+        return False
+    variants = (span, _normalize(span))
+    if any(rx.search(v) for rx in _HEURISTIC_RX for v in variants):
+        return True
+    persona = any(_PERSONA_TRIGGER.search(v) for v in variants)
+    bypass = any(_BYPASS_MARKER.search(v) for v in variants)
+    # A persona shift or a bypass/privilege demand is never legitimate *data* in a tool result.
+    return persona or bypass
+
+
+def sanitize_tool_output(text: str) -> tuple[str, list[str]]:
+    """Surgically remove injected-instruction spans from untrusted tool output, keeping benign data.
+
+    CommandSans-style (arXiv 2510.08829): instead of block-all when an injection is detected, split
+    the result into sentence/line spans and drop only the spans that match an instruction-injection
+    signal — a poisoned-but-useful document keeps its legitimate data. Returns (clean_text,
+    removed_spans); when nothing matches, the original text is returned unchanged.
+    """
+    kept: list[str] = []
+    removed: list[str] = []
+    for span in _SPAN_SPLIT.split(text):
+        (removed if _span_is_injection(span) else kept).append(span)
+    if not removed:
+        return text, []
+    clean = " ".join(s.strip() for s in kept if s.strip())
+    return clean, [s.strip() for s in removed if s.strip()]
+
+
 class HeuristicDetector:
     name = "heuristic"
 
     def __init__(self) -> None:
-        self._rx = [re.compile(p, re.IGNORECASE) for p in _HEURISTIC_PATTERNS]
+        self._rx = _HEURISTIC_RX  # shared module-level compile (see _HEURISTIC_RX)
 
     def score(self, text: str) -> float:
         # Check the raw text AND a normalized variant (defeats spacing/leet/punctuation evasion).
