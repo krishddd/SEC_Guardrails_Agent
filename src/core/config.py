@@ -37,6 +37,10 @@ class Config:
     odysseus_token: str
     openai_api_key: str | None = None
     mistral_api_key: str | None = None
+    # N8 — opt-in LLM oversight critic (OpenAI-compatible endpoint, e.g. NVIDIA integrate / GLM).
+    llm_api_key: str | None = None
+    llm_base_url: str = "https://integrate.api.nvidia.com/v1"
+    llm_model: str = "z-ai/glm-5.1"
 
 
 def load_config(
@@ -69,4 +73,10 @@ def load_config(
         odysseus_token=token,
         openai_api_key=resolved.get("OPENAI_API_KEY") or None,
         mistral_api_key=resolved.get("MISTRAL_API_KEY") or None,
+        # Key from env/.env only — never hardcoded. NVIDIA_API_KEY accepted as an alias.
+        llm_api_key=(resolved.get("LLM_API_KEY") or resolved.get("NVIDIA_API_KEY") or None),
+        llm_base_url=resolved.get("LLM_BASE_URL", "https://integrate.api.nvidia.com/v1").rstrip(
+            "/"
+        ),
+        llm_model=resolved.get("LLM_MODEL", "z-ai/glm-5.1"),
     )

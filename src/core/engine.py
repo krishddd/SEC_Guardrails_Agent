@@ -200,6 +200,7 @@ def default_engine(
     blocked_phrases: list[str] | None = None,
     budget: Budget | None = None,
     pi_detector: object | None = None,
+    critic: Critic | None = None,
 ) -> GuardrailEngine:
     canaries = canaries or []
     blocked_phrases = blocked_phrases or []
@@ -237,7 +238,8 @@ def default_engine(
         hitl=HITLManager(),
         egress=EgressGuard(allow_hosts=allow_hosts),
         memory=MemoryStore(),
-        critic=None,
+        # N8: opt-in oversight critic (e.g. load_llm_critic()); None keeps oversight a no-op.
+        critic=critic,
         canaries=canaries,
         budget=BudgetTracker(budget) if budget is not None else None,
     )
