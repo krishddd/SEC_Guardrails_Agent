@@ -87,7 +87,7 @@ def test_calc_rejects_exponent_dos(tmp_path):
     # `_safe_calc` bounds `**` so a billion-digit power can't hang the "safe" evaluator.
     r = _agent(tmp_path).handle("calc: 9**9**9**9")
     assert not r.blocked
-    assert "[tool error calc" in r.output  # ValueError("exponent out of range"), caught and reported
+    assert "[tool error calc" in r.output  # ValueError("exponent out of range"), caught
 
 
 def test_audit_trail_is_written(tmp_path):
