@@ -36,22 +36,23 @@ one `/implement` unit, ends with **passing tests** + a **checked box**, reports 
   the benign tool-call corpus.
 - **Defends:** tool/action misuse, hallucinated tool calls. **Effort:** S.
 
-## N2 — Token-level tool-output sanitization (L5×L1)  ⭐ first
+## N2 — Token-level tool-output sanitization (L5×L1)  ⭐ first  ✅ DONE (2026-06-30)
 *CommandSans — surgical strip of injected-instruction spans, not block-all.*
 
-- [ ] **N2.1** Add a `sanitize_tool_output(text) -> (clean_text, removed_spans)` primitive in
-  `src/rails/input/` (heuristic first: sentence/line-level instruction detection reusing the D1
-  `_HEURISTIC_PATTERNS` + `_PERSONA_TRIGGER`; optional ML backend behind the `ml` extra mirroring
-  `load_deberta_detector`). Strip only the spans that match instruction patterns; keep benign data.
-- [ ] **N2.2** Upgrade `GuardrailEngine.guard_tool_output`: instead of block-all on a detected
-  injection, **sanitize** → return cleaned text + an audit record of removed spans; **block only**
-  when sanitization can't make the text safe (e.g. secrets present). Keep the existing block path as
-  the fallback for the `scan_chain`'s hard rails (Secrets/PII).
-- [ ] **N2.3** Wire `runtime.py` + gateway `/api/_trace` to surface `removed_spans` count.
-- [ ] **N2.4** Tests: poisoned-but-useful tool result → injected line removed, benign data survives,
-  agent still completes the task (utility win); pure-injection result → fully stripped/blocked.
-  Report **ASR (injected instruction reaching the model)** and **utility (benign data retained)**.
-- **Defends:** indirect injection / XPIA. **Effort:** M. **Biggest utility upgrade in the plan.**
+- [x] **N2.1** Added `sanitize_tool_output(text) -> (clean_text, removed_spans)` in
+  `src/rails/input/prompt_injection.py` — sentence/line span split (`_SPAN_SPLIT`), reusing the D1
+  `_HEURISTIC_RX` + `_PERSONA_TRIGGER`/`_BYPASS_MARKER` per span. Strips only matching spans; keeps
+  benign data. (ML backend per-span is a future enhancement; heuristic shipped.)
+- [x] **N2.2** Upgraded `GuardrailEngine.guard_tool_output`: sanitize first → cleaned text +
+  `removed_spans`; blocks only when nothing benign survives (`audit decision="sanitize"`). The
+  `scan_chain` hard rails (Secrets/PII) still run on the remainder and block on a hard signal.
+- [x] **N2.3** `runtime.py` records a `sanitized_tool_output(n)` step; gateway `/api/_trace` returns
+  `output_sanitized_spans`. `GuardOutcome.removed_spans` added.
+- [x] **N2.4** Tests in `tests/test_tool_output_scan.py`: mixed result → injection removed, both
+  benign sentences survive, agent completes (utility win); entirely-injection → still blocked
+  (D4 contract preserved). Full suite 249 passed; ruff clean.
+- **Defends:** indirect injection / XPIA. **Effort:** M. **Result:** poisoned-but-useful tool
+  output now retains its benign data instead of being dropped wholesale.
 
 ## N3 — Capabilities / data-flow policy at the tool call (L3×L4)
 *CaMeL — provenance labels + sink policy; promote `taint.py`/`quarantine.py` primitives.*

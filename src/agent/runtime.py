@@ -105,6 +105,8 @@ class GuardedAgent:
                 # D4: the tool result is UNTRUSTED — scan it for indirect injection (XPIA) before it
                 # re-enters the model's context. A poisoned result is dropped, not propagated.
                 scanned = self.engine.guard_tool_output(ran, source=f"tool:{verdict.call.name}")
+                if scanned.removed_spans:  # N2: surgical sanitization stripped injected span(s)
+                    steps.append(f"sanitized_tool_output({len(scanned.removed_spans)})")
                 outputs.append(
                     scanned.text if scanned.allowed else f"[tool output blocked: {scanned.reason}]"
                 )

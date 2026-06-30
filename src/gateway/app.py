@@ -129,6 +129,8 @@ def create_app(
             if isinstance(event.result, str) and event.result:
                 out = engine.guard_tool_output(event.result, source=f"tool:{call.name}")
                 response["output_decision"] = "block" if not out.allowed else "allow"
+                if out.removed_spans:  # N2: count of surgically-stripped injection spans
+                    response["output_sanitized_spans"] = len(out.removed_spans)
                 if not out.allowed:
                     response["output_reason"] = out.reason
             return response
