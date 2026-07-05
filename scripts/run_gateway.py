@@ -32,11 +32,28 @@ from gateway.odysseus_client import OdysseusClient  # noqa: E402
 _DEFAULT_ENV = "../Agent evals/Agent eval pipeline/.env"
 
 
+def _maybe_critic(config):
+    """N8 — opt-in LLM oversight critic. Enabled by GATEWAY_LLM_CRITIC=1 + a configured LLM key.
+    Never fatal: a missing key or the `llm` extra not installed -> log and run without the critic.
+    """
+    if os.getenv("GATEWAY_LLM_CRITIC", "").lower() not in ("1", "true", "yes"):
+        return None
+    try:
+        from rails.oversight.llm_critic import load_llm_critic
+
+        critic = load_llm_critic(config)
+        print(f"[gateway] LLM oversight critic ON ({config.llm_model})")
+        return critic
+    except Exception as exc:  # missing key / `llm` extra not installed — degrade, don't crash
+        print(f"[gateway] LLM critic requested but unavailable ({type(exc).__name__}: {exc})")
+        return None
+
+
 def build() -> object:
     config = load_config(fallback_path=os.getenv("GUARDRAILS_ENV_FALLBACK", _DEFAULT_ENV))
     client = OdysseusClient(config.odysseus_base_url, config.odysseus_token)
     audit = AuditLog(str(ROOT / "gateway_audit.jsonl"))
-    engine = default_engine(audit)
+    engine = default_engine(audit, critic=_maybe_critic(config))
     return create_app(
         client, audit=audit, engine=engine, trace_token=os.getenv("GATEWAY_TRACE_TOKEN")
     )

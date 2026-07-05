@@ -31,6 +31,7 @@ from rails.output.leak import OutputLeakRail
 from rails.output.sanitize import SanitizeRail
 from rails.oversight.critic import Critic, Trajectory, Verdict
 from rails.reasoning.taint import TaintGate
+from rails.tool.arg_schema import ToolArgSchemaRail, default_tool_schemas
 from rails.tool.code_shield import CodeShieldRail
 from rails.tool.egress import EgressGuard
 from rails.tool.exec_gate import ExecGate
@@ -75,6 +76,8 @@ class GuardrailEngine:
     # D4: detection rails for untrusted tool/retrieval output (no spotlight datamarking — that is a
     # model-context transform). Falls back to `input_chain` when not wired.
     scan_chain: RailChain | None = None
+    # N1: function-call argument-schema validation. Default is empty (no-op) until populated.
+    arg_schema: ToolArgSchemaRail = field(default_factory=ToolArgSchemaRail)
 
     # ── input ────────────────────────────────────────────────────────────────
     def guard_input(
@@ -102,6 +105,18 @@ class GuardrailEngine:
                 call.tainted_args,
                 call.role,
             )
+
+        # N1: function-call schema check (cheap, fail-fast) — a malformed/hallucinated call (missing
+        # required arg, conflicting type) is blocked; a suspicious value goes to HITL.
+        schema_decision = self.arg_schema.inspect(call)
+        if schema_decision.effect is Effect.BLOCK:
+            return self._tool_blocked("arg_schema", call, schema_decision.reason)
+        if schema_decision.effect is Effect.HITL:
+            approval = self.hitl.request(call, now=now)
+            self.audit.record(
+                decision="hitl", stage="arg_schema", tool=call.name, approval_id=approval.id
+            )
+            return ToolVerdict(Effect.HITL, call, schema_decision.reason, "arg_schema", approval.id)
 
         for key in _URL_ARGS:
             value = call.args.get(key)
@@ -200,9 +215,13 @@ def default_engine(
     blocked_phrases: list[str] | None = None,
     budget: Budget | None = None,
     pi_detector: object | None = None,
+    critic: Critic | None = None,
+    tool_schemas: dict | None = None,
 ) -> GuardrailEngine:
     canaries = canaries or []
     blocked_phrases = blocked_phrases or []
+    # N1: validate tool-call args against declared signatures; defaults to the reference tools.
+    schemas = tool_schemas if tool_schemas is not None else default_tool_schemas()
     # `pi_detector` swaps the prompt-injection backend (e.g. the deberta-v3 ML detector from the
     # `ml` extra) in for the default heuristic; None keeps the cheap deterministic first-line.
     pi_rail = PromptInjectionRail(pi_detector) if pi_detector is not None else PromptInjectionRail()
@@ -237,7 +256,9 @@ def default_engine(
         hitl=HITLManager(),
         egress=EgressGuard(allow_hosts=allow_hosts),
         memory=MemoryStore(),
-        critic=None,
+        arg_schema=ToolArgSchemaRail(schemas),
+        # N8: opt-in oversight critic (e.g. load_llm_critic()); None keeps oversight a no-op.
+        critic=critic,
         canaries=canaries,
         budget=BudgetTracker(budget) if budget is not None else None,
     )
