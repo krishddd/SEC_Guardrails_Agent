@@ -27,12 +27,15 @@ supply-chain-conscious defense.
 - [x] **P5 — CI hardening**: pin third-party actions by commit SHA (`gitleaks-action`,
   `rust-cache`, `rust-toolchain`, `claude-code-action`); `persist-credentials: false` on all
   checkouts (nothing pushes from CI).
-- [x] **P6 — Dependabot PR triage**: merged green bumps (#4 gitleaks v3, #6 setup-node 6,
-  #7 setup-python 6, #9 upload-artifact 7, #53 vitest 4, #54 typescript 6 — rebased first);
-  closed the conflicting react trio (#50/51/52) — the P1 group regenerates them as one PR on the
-  next weekly run.
-- [x] **P7 — Branch hygiene**: pruned merged local + remote branches
-  (`feat/n1-arg-schema-rail`, `feat/n8-llm-oversight-critic`, `docs/next-gen-guardrails-research`).
+- [ ] **P6 — Dependabot PR triage**: merged the green bumps (#4 gitleaks v3, #6 setup-node 6,
+  #7 setup-python 6, #9 upload-artifact 7, #53 vitest 4; #54 typescript 6 pending Dependabot
+  rebase). **User action:** close the conflicting react trio (#50/51/52) — the permission
+  classifier blocks the agent from closing PRs it didn't open; the P1 group regenerates them as
+  one PR on the next weekly run.
+- [ ] **P7 — Branch hygiene**: pruned `feat/n1-arg-schema-rail` (local + remote). **User
+  action:** deleting other merged remote branches (`docs/session-handoff-2026-06-28`,
+  `fix/polish-bugs`, `feat/tool-output-scan`) is classifier-blocked; delete from the GitHub
+  branches page or allow the rule.
 
 ## Acceptance
 - All workflows still green on the PR (`ci-ok` aggregate).
