@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   audit:
@@ -15,6 +16,8 @@ jobs:
       HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
@@ -28,9 +31,43 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           npm install -g @anthropic-ai/claude-code
-          claude -p "Audit this guardrail codebase for dependency CVEs and unsafe patterns (rails that fail open, untrusted data reaching a tool/sink without a taint check, secrets in code). Report only, do not fix." \
+          claude -p "Audit this guardrail codebase for dependency CVEs and unsafe patterns (rails that fail open, untrusted data reaching a tool/sink without a taint check, secrets in code). Report only, do not fix. If and only if you found no issues at all, end your report with the exact line NO_FINDINGS." \
             --allowedTools "Read,Grep,Bash(pip-audit:*)" \
             --output-format json > audit-report.json || true
+      - name: Open or update the findings issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          VULNS=$(jq '[.dependencies[]?.vulns[]?] | length' pip-audit.json 2>/dev/null || echo 0)
+          CLAUDE_RESULT=$(jq -r '.result // empty' audit-report.json 2>/dev/null || true)
+          CLAUDE_CLEAN=false
+          if [ -z "$CLAUDE_RESULT" ] || printf '%s' "$CLAUDE_RESULT" | grep -q '^NO_FINDINGS$'; then
+            CLAUDE_CLEAN=true
+          fi
+          if [ "$VULNS" -eq 0 ] && [ "$CLAUDE_CLEAN" = true ]; then
+            echo "No findings — not opening an issue."
+            exit 0
+          fi
+          TITLE="Weekly security audit findings"
+          {
+            echo "Automated report from the [Weekly Security Audit](../actions/workflows/claude-audit.yml) run of $(date -u +%F)."
+            echo
+            echo "- **pip-audit vulnerabilities:** $VULNS (raw JSON in the run's \`security-report\` artifact)"
+            echo
+            if [ -n "$CLAUDE_RESULT" ]; then
+              echo "## Claude security sweep"
+              echo
+              printf '%s' "$CLAUDE_RESULT" | head -c 6000
+              echo
+            fi
+          } > issue-body.md
+          NUM=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number' || true)
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --body-file issue-body.md
+          else
+            gh issue create --title "$TITLE" --body-file issue-body.md
+          fi
       - uses: actions/upload-artifact@v7
         with:
           name: security-report

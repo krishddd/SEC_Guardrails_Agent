@@ -10,6 +10,9 @@ permissions:
 
 jobs:
   review:
+    # Dependabot version bumps get CI + human review; a token-billed LLM pass
+    # over a lockfile diff adds nothing.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     env:
       HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
@@ -21,7 +24,8 @@ jobs:
         if: env.HAS_KEY == 'true'
         with:
           fetch-depth: 0
-      - uses: anthropics/claude-code-action@v1
+          persist-credentials: false
+      - uses: anthropics/claude-code-action@558b1d6cab4085c7753fe402c10bef0fbb92ac7a # v1
         if: env.HAS_KEY == 'true'
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
