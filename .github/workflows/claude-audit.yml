@@ -31,7 +31,7 @@ jobs:
           claude -p "Audit this guardrail codebase for dependency CVEs and unsafe patterns (rails that fail open, untrusted data reaching a tool/sink without a taint check, secrets in code). Report only, do not fix." \
             --allowedTools "Read,Grep,Bash(pip-audit:*)" \
             --output-format json > audit-report.json || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: security-report
           path: |
