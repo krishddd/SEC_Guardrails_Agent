@@ -38,21 +38,22 @@ one `/implement` unit, ends with **passing tests** + a **checked box**, reports 
 - **Defends:** tool/action misuse, hallucinated tool calls. **Effort:** S. **FPR:** 0 on existing
   flows (verified — gateway trace + agent e2e tests unchanged).
 
-## N2 — Token-level tool-output sanitization (L5×L1)  ⭐ first
+## N2 — Token-level tool-output sanitization (L5×L1)  ✅ DONE (2026-07-05)
 *CommandSans — surgical strip of injected-instruction spans, not block-all.*
 
-- [ ] **N2.1** Add a `sanitize_tool_output(text) -> (clean_text, removed_spans)` primitive in
-  `src/rails/input/` (heuristic first: sentence/line-level instruction detection reusing the D1
-  `_HEURISTIC_PATTERNS` + `_PERSONA_TRIGGER`; optional ML backend behind the `ml` extra mirroring
-  `load_deberta_detector`). Strip only the spans that match instruction patterns; keep benign data.
-- [ ] **N2.2** Upgrade `GuardrailEngine.guard_tool_output`: instead of block-all on a detected
-  injection, **sanitize** → return cleaned text + an audit record of removed spans; **block only**
-  when sanitization can't make the text safe (e.g. secrets present). Keep the existing block path as
-  the fallback for the `scan_chain`'s hard rails (Secrets/PII).
-- [ ] **N2.3** Wire `runtime.py` + gateway `/api/_trace` to surface `removed_spans` count.
-- [ ] **N2.4** Tests: poisoned-but-useful tool result → injected line removed, benign data survives,
-  agent still completes the task (utility win); pure-injection result → fully stripped/blocked.
-  Report **ASR (injected instruction reaching the model)** and **utility (benign data retained)**.
+- [x] **N2.1** `src/rails/input/tool_sanitizer.py` — `sanitize_tool_output(text) -> (clean_text,
+  removed_spans)`: sentence/line-level segmentation, segments scored by the pluggable `Detector`
+  (default `HeuristicDetector` = the D1 patterns + persona×bypass); spans carry offsets + scores.
+  `load_ml_sanitizer()` = deberta-v3 per segment behind the `ml` extra.
+- [x] **N2.2** `GuardrailEngine.guard_tool_output`: on a `prompt_injection` block → sanitize →
+  **re-scan the cleaned text with the full chain** → allow only if the re-scan passes (fail-closed:
+  the chain, not the sanitizer, is the authority — adversarially tested). Hard rails (Secrets/PII)
+  keep their block/redact path. Audit records `decision="sanitize"` + `removed_spans`.
+- [x] **N2.3** `AgentResult.sanitized_spans` (runtime) + gateway `/api/_trace`
+  `output_decision="sanitize"` / `removed_spans`.
+- [x] **N2.4** `tests/test_tool_sanitizer.py` (13 tests incl. 2 bypass-attempt): measured on the
+  mini-suite **ASR 0.00, utility 1.00 (was 0 under D4 block-all), FPR 0.00** — split, recomputed in
+  CI; results in `docs/eval/N2-sanitizer.md`. Full suite 277 passed; ruff clean.
 - **Defends:** indirect injection / XPIA. **Effort:** M. **Biggest utility upgrade in the plan.**
 
 ## N3 — Capabilities / data-flow policy at the tool call (L3×L4)
