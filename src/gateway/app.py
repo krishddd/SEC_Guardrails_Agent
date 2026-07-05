@@ -124,13 +124,19 @@ def create_app(
                 "reason": verdict.reason,
                 "tool": call.name,
             }
-            # D4: also scan the tool RESULT for indirect injection (XPIA) before it re-enters the
-            # model — the highest-value signal in a real trace. Surfaced alongside the call verdict.
+            # D4/N2: also scan the tool RESULT for indirect injection (XPIA) before it re-enters
+            # the model — the highest-value signal in a real trace. An injected span is stripped
+            # ("sanitize", count surfaced); a result that can't be made safe is a "block".
             if isinstance(event.result, str) and event.result:
                 out = engine.guard_tool_output(event.result, source=f"tool:{call.name}")
-                response["output_decision"] = "block" if not out.allowed else "allow"
                 if not out.allowed:
+                    response["output_decision"] = "block"
                     response["output_reason"] = out.reason
+                elif out.removed_spans:
+                    response["output_decision"] = "sanitize"
+                    response["removed_spans"] = out.removed_spans
+                else:
+                    response["output_decision"] = "allow"
             return response
 
     return app

@@ -36,6 +36,7 @@ class AgentResult:
     block_reason: str = ""
     steps: list[str] = field(default_factory=list)
     pending_approvals: list[str] = field(default_factory=list)
+    sanitized_spans: int = 0  # N2: injected spans stripped from tool outputs this turn
 
 
 class GuardedAgent:
@@ -71,6 +72,7 @@ class GuardedAgent:
         steps: list[str] = []
         outputs: list[str] = []
         pending: list[str] = []
+        sanitized = 0
 
         for kind, payload in self._plan(gin.text or ""):
             if kind == "echo":
@@ -102,9 +104,11 @@ class GuardedAgent:
                         ran = tool.run(verdict.call.args)
                     except Exception as exc:  # a tool failure is data, never a crash of the turn
                         ran = f"[tool error {verdict.call.name}: {type(exc).__name__}: {exc}]"
-                # D4: the tool result is UNTRUSTED — scan it for indirect injection (XPIA) before it
-                # re-enters the model's context. A poisoned result is dropped, not propagated.
+                # D4/N2: the tool result is UNTRUSTED — scan it for indirect injection (XPIA)
+                # before it re-enters the model's context. An injected span is stripped (benign
+                # remainder survives); a result sanitization can't make safe is dropped whole.
                 scanned = self.engine.guard_tool_output(ran, source=f"tool:{verdict.call.name}")
+                sanitized += scanned.removed_spans
                 outputs.append(
                     scanned.text if scanned.allowed else f"[tool output blocked: {scanned.reason}]"
                 )
@@ -113,8 +117,14 @@ class GuardedAgent:
         # 2) Output guard.
         gout = self.engine.guard_output(draft)
         if not gout.allowed:
-            return AgentResult("Response withheld by output guardrails.", True, gout.reason, steps)
+            return AgentResult(
+                "Response withheld by output guardrails.",
+                True,
+                gout.reason,
+                steps,
+                sanitized_spans=sanitized,
+            )
 
         # 3) Oversight.
         self.engine.review(Trajectory(task=user_msg, steps=steps, output=gout.text or ""))
-        return AgentResult(gout.text or "", False, "", steps, pending)
+        return AgentResult(gout.text or "", False, "", steps, pending, sanitized_spans=sanitized)
