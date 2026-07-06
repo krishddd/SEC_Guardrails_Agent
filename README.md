@@ -83,10 +83,10 @@ research/ → docs/specs/ → docs/architecture/ (+adr) → docs/plans/ → code
 
 ```bash
 # 1. Install (control plane; Rust core + ML detectors are extras)
-python -m pip install -e ".[dev]"          # add ".[ml]" for deberta/Presidio, ".[bench]" for AgentDojo
+python -m pip install -e ".[dev]"          # ".[ml]" deberta/Presidio · ".[bench]" AgentDojo · ".[llm]" L7 critic
 
 # 2. Tests + lint
-pytest -q                                   # 230+ pass; Rust↔Python parity runs in CI
+pytest -q                                   # 277 pass; Rust↔Python parity runs in CI
 ruff check . && ruff format --check .
 
 # 3. See every layer fire end-to-end (no external services needed)
@@ -141,6 +141,7 @@ attributable metric):
 | AgentDojo (banking/slack/travel/workspace) | injection interception | **1.00** (12/12) |
 | all suites | **FPR / over-refusal** | **0.00** |
 | indirect injection (XPIA) via a poisoned tool result | caught at the gateway, live | ✅ |
+| N2 token-level sanitization (poisoned-but-useful suite) | ASR / utility / FPR (split) | **0.00 / 1.00 / 0.00** |
 
 Latency: deterministic input rails < 15 ms p50; the ML detector (deberta-v3, 323 ms CPU) runs only on
 gray-band inputs via a conditional second stage, so benign traffic pays ~0 (see
@@ -154,10 +155,17 @@ gray-band inputs via a conditional second stage, so benign traffic pays ~0 (see
   live A/B (Security_module) and AgentDojo benchmark, latency spike with real ML models.
 - ✅ **Defense R&D (D1–D5)** — detector recall upgrade, conditional second stage, ensemble +
   PromptGuard 2 backend, and tool-output (indirect/XPIA) scanning proven live.
+- ✅ **Next-gen rails (N-series, 2026-07)** — **N1** deterministic function-call argument-schema
+  rail (L4); **N2** token-level tool-output sanitization (CommandSans-style: injected spans
+  stripped, benign data survives, fail-closed re-scan — utility 0 → 1.0 on the poisoned suite);
+  **N8** opt-in LLM oversight critic (L7) wired into the live gateway path.
+- ✅ **CI/CD pipeline** — split ASR/FPR gate summary on every run, grouped Dependabot updates,
+  SHA-pinned third-party actions, weekly security audit that files a GitHub issue on findings.
 
 Run `python scripts/demo.py` to watch every layer fire end-to-end. Track detail in
-[`docs/plans/odysseus-guardrails-plan.md`](docs/plans/odysseus-guardrails-plan.md) and the defense
-roadmap in [`docs/plans/defense-improvements.md`](docs/plans/defense-improvements.md).
+[`docs/plans/odysseus-guardrails-plan.md`](docs/plans/odysseus-guardrails-plan.md), the defense
+roadmap in [`docs/plans/defense-improvements.md`](docs/plans/defense-improvements.md), and the
+next-generation plan in [`docs/plans/next-gen-guardrails.md`](docs/plans/next-gen-guardrails.md).
 
 ## Security
 
