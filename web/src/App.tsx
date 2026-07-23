@@ -2,6 +2,7 @@
 // approve/reject to the gateway UI API; enforcement stays server-side.
 
 import { useCallback, useEffect, useState } from "react";
+import type { JSX } from "react";
 import type { Approval, GovernanceReport, UiClient } from "./api";
 
 export function HitlApp({ client }: { client: UiClient }): JSX.Element {
