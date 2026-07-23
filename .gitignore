@@ -40,4 +40,4 @@ crates/**/target/
 # Node
 node_modules/
 web/node_modules/
-web/package-lock.json
+# web/package-lock.json is committed (P9) — reproducible installs + `npm ci` in CI.

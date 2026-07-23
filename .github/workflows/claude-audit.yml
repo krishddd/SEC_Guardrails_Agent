@@ -12,6 +12,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
@@ -24,13 +25,27 @@ jobs:
       - name: Dependency CVE scan (pip-audit, report-only)
         run: |
           python -m pip install --upgrade pip pip-audit
+          # Install the project so pip-audit scans the real dependency tree, not an
+          # empty env (P8). --strict off / report-only: never fail the job on a CVE.
+          pip install -e ".[dev]" || true
           pip-audit --format json --output pip-audit.json || true
+      - name: Rust CVE scan (cargo audit, report-only)
+        if: hashFiles('crates/guardrails-core/Cargo.toml') != ''
+        run: |
+          cargo install cargo-audit --locked || true
+          cargo audit --file crates/guardrails-core/Cargo.lock --json > cargo-audit.json || true
+      - name: Web CVE scan (npm audit, report-only)
+        if: hashFiles('web/package.json') != ''
+        working-directory: web
+        run: |
+          npm audit --json > ../npm-audit.json || true
       - name: Claude security sweep (report-only)
         if: env.HAS_KEY == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          npm install -g @anthropic-ai/claude-code
+          # Pinned like every third-party action in this repo (P12).
+          npm install -g @anthropic-ai/claude-code@2.1.218
           claude -p "Audit this guardrail codebase for dependency CVEs and unsafe patterns (rails that fail open, untrusted data reaching a tool/sink without a taint check, secrets in code). Report only, do not fix. If and only if you found no issues at all, end your report with the exact line NO_FINDINGS." \
             --allowedTools "Read,Grep,Bash(pip-audit:*)" \
             --output-format json > audit-report.json || true
@@ -40,12 +55,14 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           VULNS=$(jq '[.dependencies[]?.vulns[]?] | length' pip-audit.json 2>/dev/null || echo 0)
+          CARGO_VULNS=$(jq '.vulnerabilities.count // 0' cargo-audit.json 2>/dev/null || echo 0)
+          NPM_VULNS=$(jq '.metadata.vulnerabilities.total // 0' npm-audit.json 2>/dev/null || echo 0)
           CLAUDE_RESULT=$(jq -r '.result // empty' audit-report.json 2>/dev/null || true)
           CLAUDE_CLEAN=false
           if [ -z "$CLAUDE_RESULT" ] || printf '%s' "$CLAUDE_RESULT" | grep -q '^NO_FINDINGS$'; then
             CLAUDE_CLEAN=true
           fi
-          if [ "$VULNS" -eq 0 ] && [ "$CLAUDE_CLEAN" = true ]; then
+          if [ "$VULNS" -eq 0 ] && [ "$CARGO_VULNS" -eq 0 ] && [ "$NPM_VULNS" -eq 0 ] && [ "$CLAUDE_CLEAN" = true ]; then
             echo "No findings — not opening an issue."
             exit 0
           fi
@@ -53,7 +70,11 @@ jobs:
           {
             echo "Automated report from the [Weekly Security Audit](../actions/workflows/claude-audit.yml) run of $(date -u +%F)."
             echo
-            echo "- **pip-audit vulnerabilities:** $VULNS (raw JSON in the run's \`security-report\` artifact)"
+            echo "- **pip-audit (Python) vulnerabilities:** $VULNS"
+            echo "- **cargo-audit (Rust core) vulnerabilities:** $CARGO_VULNS"
+            echo "- **npm audit (web) vulnerabilities:** $NPM_VULNS"
+            echo
+            echo "Raw JSON in the run's \`security-report\` artifact."
             echo
             if [ -n "$CLAUDE_RESULT" ]; then
               echo "## Claude security sweep"
@@ -73,5 +94,7 @@ jobs:
           name: security-report
           path: |
             pip-audit.json
+            cargo-audit.json
+            npm-audit.json
             audit-report.json
           if-no-files-found: ignore

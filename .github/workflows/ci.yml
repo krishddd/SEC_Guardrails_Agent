@@ -17,6 +17,7 @@ jobs:
   python:
     name: Python (ruff + pytest)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
@@ -42,6 +43,7 @@ jobs:
   rust-core:
     name: Rust core (fmt + clippy + test + wheel)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         with:
@@ -85,8 +87,9 @@ jobs:
           pytest -q tests/test_secrets_rail.py tests/test_spotlight_rail.py tests/test_sanitize_rail.py
 
   web:
-    name: Web (tsc + vitest)
+    name: Web (tsc + eslint + vitest)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
@@ -104,17 +107,21 @@ jobs:
         if: steps.gate.outputs.go == 'true'
         with:
           node-version: "20"
-      - name: install + typecheck + test
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: install + typecheck + lint + test
         if: steps.gate.outputs.go == 'true'
         working-directory: web
         run: |
-          npm install
-          npx tsc --noEmit
-          npx vitest run
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm run test
 
   secrets-scan:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -127,6 +134,7 @@ jobs:
   ci-ok:
     name: CI passed
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: always()
     needs: [python, rust-core, web, secrets-scan]
     steps:

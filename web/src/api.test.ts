@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { UiClient, type Fetcher } from "./api";
 
-function fakeFetcher(body: unknown, ok = true, status = 200): { calls: string[]; fetcher: Fetcher } {
+function fakeFetcher(
+  body: unknown,
+  ok = true,
+  status = 200,
+): { calls: string[]; fetcher: Fetcher } {
   const calls: string[] = [];
   const fetcher: Fetcher = async (url, init) => {
     calls.push(`${(init?.method as string) ?? "GET"} ${url}`);
@@ -12,7 +16,9 @@ function fakeFetcher(body: unknown, ok = true, status = 200): { calls: string[];
 
 describe("UiClient", () => {
   it("lists approvals with bearer auth", async () => {
-    const { calls, fetcher } = fakeFetcher([{ id: "a1", tool: "send_email", args: {}, expires_at: 1 }]);
+    const { calls, fetcher } = fakeFetcher([
+      { id: "a1", tool: "send_email", args: {}, expires_at: 1 },
+    ]);
     const client = new UiClient("http://gw", "tok", fetcher);
     const rows = await client.listApprovals();
     expect(rows[0].id).toBe("a1");
@@ -35,7 +41,12 @@ describe("UiClient", () => {
 
   it("reads the governance report", async () => {
     const report = {
-      summary: { total: 3, by_decision: { block: 1 }, block_count: 1, controls_evidenced: ["Art. 12"] },
+      summary: {
+        total: 3,
+        by_decision: { block: 1 },
+        block_count: 1,
+        controls_evidenced: ["Art. 12"],
+      },
       control_map: {},
     };
     const { fetcher } = fakeFetcher(report);
