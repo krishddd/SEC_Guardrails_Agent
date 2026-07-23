@@ -61,7 +61,7 @@ jobs:
         if: steps.gate.outputs.go == 'true'
         with:
           python-version: "3.11"
-      - uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88 # SHA-pinned; toolchain via input
+      - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # SHA-pinned; toolchain via input
         if: steps.gate.outputs.go == 'true'
         with:
           toolchain: stable
@@ -103,7 +103,7 @@ jobs:
             echo "No web app yet — skipping web lane."
             echo "go=false" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         if: steps.gate.outputs.go == 'true'
         with:
           node-version: "20"
