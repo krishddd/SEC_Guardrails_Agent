@@ -37,6 +37,47 @@ supply-chain-conscious defense.
   `fix/polish-bugs`, `feat/tool-output-scan`) is classifier-blocked; delete from the GitHub
   branches page or allow the rule.
 
+## P8–P13 — pipeline gaps found 2026-07-23
+
+Second-pass audit of the CI/CD pipeline. P8 is a **fail-open security bug**; the rest close
+supply-chain and hygiene gaps in a repo whose whole framing is supply-chain-conscious defense.
+
+- [x] **P8 — weekly CVE scan scans nothing (BUG, highest value)** (`claude-audit.yml`): the
+  `pip-audit` step installs only `pip-audit`, never the project, so it audits an empty environment
+  and reports ~0 vulns forever — the P3 "open an issue on findings" logic silently never fires for
+  dependency CVEs. Fix: `pip install -e ".[dev]"` (plus any extras worth scanning) before
+  `pip-audit`, so the real dependency tree is scanned. The pipeline currently **fails open**.
+- [x] **P9 — commit lockfiles + `npm ci`**: no `web/package-lock.json` and no crate `Cargo.lock`
+  are committed, and CI runs `npm install` (fresh resolve every run — a poisoned patch release
+  walks in). Commit `web/package-lock.json` and `crates/guardrails-core/Cargo.lock`; switch the
+  web lane (`ci.yml`) from `npm install` to `npm ci`.
+- [x] **P10 — web eslint lane**: CLAUDE.md's per-language gate is `tsc --noEmit` + `eslint` +
+  `vitest`, but eslint is absent from `web/package.json` and CI runs only typecheck + tests. Add
+  eslint (+ prettier) to `web/` and wire `npm run lint` into the web lane so the convention is real.
+- [x] **P11 — polyglot audit coverage** (`claude-audit.yml`): the weekly audit is Python-only. Add
+  `cargo audit` (Rust core) and `npm audit` (web) as report-only steps feeding the same findings
+  issue, so the audit matches the polyglot stack.
+- [x] **P12 — pin Claude Code in the audit + workflow hardening**: the audit installs
+  `@anthropic-ai/claude-code` unpinned in a repo that SHA-pins every third-party action — pin a
+  version. Add `timeout-minutes` to every job (~15 min lanes, ~30 min audit) so a wedged build or a
+  hung LLM call can't burn the 6-hour default. Add a `concurrency` group with
+  `cancel-in-progress: true` to `claude-review.yml` (it triggers on `synchronize`; three quick
+  pushes queue three billed reviews of superseded diffs — `ci.yml` already has the pattern).
+- [ ] **P13 — optional: workflow-lint lane**: add `actionlint` (or `zizmor`) over `.github/`, and
+  enable GitHub CodeQL default setup (repo-settings toggle, flagged to the user — not a file).
+
+**CLAUDE.md drift (user action):** CLAUDE.md says the Rust crate holds the L4 policy-DSL evaluator
+and taint primitives, but the crate implements only secrets/spotlight/sanitize (which is why the CI
+parity step covers exactly those three). The claim is aspirational; the `pre-edit-guard` hook blocks
+the agent from editing CLAUDE.md, so this correction is the user's to make.
+
+**Applied 2026-07-23** on branch `feat/pipeline-p8-p13`: P8–P12 landed (workflow edits went
+through — the `pre-edit-guard` hook did not block them this session). Verified locally: web lane
+green (`tsc --noEmit` + `eslint` + `prettier --check` + `vitest`, 4 tests), Python `pytest -q` 277
+passed, all three workflow YAMLs parse, `web/package-lock.json` + `crates/guardrails-core/Cargo.lock`
+committed (the former un-ignored in `.gitignore`). `cargo audit`/`npm audit` flags and jq paths
+verified against upstream schemas. P13 left open (optional).
+
 ## Acceptance
 - All workflows still green on the PR (`ci-ok` aggregate).
 - Python gates green locally: `ruff check` + `ruff format --check` + `pytest -q`.

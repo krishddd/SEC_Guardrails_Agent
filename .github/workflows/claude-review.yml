@@ -8,12 +8,19 @@ permissions:
   pull-requests: write
   contents: read
 
+# Cancel a queued/running review when a newer commit lands on the same PR — three
+# quick pushes otherwise queue three billed LLM reviews of superseded diffs (P12).
+concurrency:
+  group: claude-review-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   review:
     # Dependabot version bumps get CI + human review; a token-billed LLM pass
     # over a lockfile diff adds nothing.
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
