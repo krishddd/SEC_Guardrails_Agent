@@ -63,8 +63,11 @@ supply-chain and hygiene gaps in a repo whose whole framing is supply-chain-cons
   hung LLM call can't burn the 6-hour default. Add a `concurrency` group with
   `cancel-in-progress: true` to `claude-review.yml` (it triggers on `synchronize`; three quick
   pushes queue three billed reviews of superseded diffs — `ci.yml` already has the pattern).
-- [ ] **P13 — optional: workflow-lint lane**: add `actionlint` (or `zizmor`) over `.github/`, and
-  enable GitHub CodeQL default setup (repo-settings toggle, flagged to the user — not a file).
+- [x] **P13 — workflow-lint lane** (`ci.yml`): added a `workflow-lint` job running pinned
+  `actionlint` v1.7.7 + shellcheck (preinstalled on the runner) over `.github/`, wired into the
+  `ci-ok` aggregate. Verified locally (actionlint+shellcheck exit 0 on all three workflows). CodeQL
+  default setup stays a **repo-settings toggle** (Security → Code scanning), flagged to the user —
+  it is not a committable file.
 
 **CLAUDE.md drift (user action):** CLAUDE.md says the Rust crate holds the L4 policy-DSL evaluator
 and taint primitives, but the crate implements only secrets/spotlight/sanitize (which is why the CI

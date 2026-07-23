@@ -25,31 +25,65 @@ untrusted** (provenance labels + taint tracking).
 
 ## Architecture
 
-```
-                    client
-                      │
-                      ▼
-        ┌─────────────────────────────┐
-        │  Guardrail Gateway  :7100    │   FastAPI reverse-proxy
-        │  ── input rails  (L1, <30ms) │   secrets · PI/jailbreak · PII · spotlighting
-        │  ── dialog rails (L2, <200ms)│   Task-Shield · deny-by-default topics
-        │            │                 │
-        │            ▼  forward (token)│
-        │     Odysseus  :7000  ────────┼──▶ tool trace (export hook, ADR-0005)
-        │            │   ◀─────────────┤    L4 tool · L5 memory · multi-agent rails
-        │            ▼                 │
-        │  ── output rails (L6, <50ms) │   schema · content · grounding · redact · sanitize
-        │  ── oversight critic (L7)    │
-        └─────────────────────────────┘
-                      │   every decision → OTel span + append-only audit
-                      ▼
-                   client
+The gateway is a reverse proxy: every turn passes through input + dialog rails on the way in, the
+tool trace is checked mid-flight, and output + oversight rails run before the response reaches the
+client. Each decision emits an OpenTelemetry span and an append-only audit record.
+
+```mermaid
+flowchart TB
+    client([Client])
+    subgraph GW["Guardrail Gateway&nbsp;&nbsp;:7100&nbsp;&nbsp;(FastAPI reverse-proxy)"]
+        direction TB
+        L1["L1 · input rails&nbsp;&nbsp;&lt;30ms<br/>secrets · PI/jailbreak · PII · spotlighting"]
+        L2["L2 · dialog rails&nbsp;&nbsp;&lt;200ms<br/>Task-Shield · deny-by-default topics"]
+        L6["L6 · output rails&nbsp;&nbsp;&lt;50ms<br/>schema · content · grounding · redact · sanitize"]
+        L7["L7 · oversight critic&nbsp;&nbsp;(opt-in LLM)"]
+    end
+     ody["Odysseus&nbsp;&nbsp;:7000<br/>(Mistral-backed agent)"]
+    trace[["tool trace ingest&nbsp;&nbsp;/api/_trace<br/>L4 tool · L5 memory · multi-agent rails"]]
+    obs[("OTel span + append-only audit<br/>per rail decision")]
+
+    client -->|request| L1 --> L2 -->|forward + token| ody
+    ody -.->|tool-call lifecycle| trace -.->|verdict| ody
+    ody -->|response| L6 --> L7 -->|allow / block / redact| client
+    L1 & L2 & L6 & L7 -.-> obs
+
+    classDef rail fill:#0d3b66,stroke:#0d3b66,color:#fff;
+    classDef ext fill:#5c374c,stroke:#5c374c,color:#fff;
+    class L1,L2,L6,L7 rail;
+    class ody,trace ext;
 ```
 
 The **7 control layers**: L1 input · L2 dialog/topic · L3 reasoning/IFC (dual-LLM + taint) · L4
 tool/action · L5 retrieval/memory · multi-agent comms · L7 verification/oversight · (+ L6 output) ·
 cross-cutting observability. Each layer maps to specific attacks it defends — see
 [`docs/architecture/odysseus-guardrails.md`](docs/architecture/odysseus-guardrails.md).
+
+### Request lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant G as Gateway :7100
+    participant O as Odysseus :7000
+    participant A as Audit + OTel
+
+    C->>G: prompt
+    G->>G: L1 input rails (secrets, PI, PII, spotlight)
+    alt intercepted
+        G-->>C: block (fail-closed)
+        G->>A: decision = BLOCK
+    else allowed
+        G->>G: L2 dialog / topic rails
+        G->>O: forward (bearer token)
+        O-->>G: tool trace → L4/L5/multi-agent rails
+        O-->>G: model response
+        G->>G: L6 output rails + L7 oversight critic
+        G-->>C: allow / redacted / sanitized
+        G->>A: decision + spans
+    end
+```
 
 ## Polyglot stack — each language where it earns its place
 
@@ -124,6 +158,59 @@ before use**.
 | `tests/` | Unit + adversarial fixtures, offline Odysseus stub |
 | `.claude/` | Skills, subagents, pre-edit guard hook, settings |
 
+## CI/CD pipeline
+
+Every PR runs six required lanes; `ci-ok` aggregates them so branch protection can gate on one
+check. A weekly audit files a GitHub issue on findings, and Dependabot updates arrive grouped.
+
+```mermaid
+flowchart LR
+    pr([PR / push to main]) --> py & rust & web & sec & wl
+    py["Python<br/>ruff · pytest · split-metric gate summary"]
+    rust["Rust core<br/>fmt · clippy · test · wheel + Py parity"]
+    web["Web<br/>tsc · eslint · prettier · vitest · npm ci"]
+    sec["Secret scan<br/>gitleaks"]
+    wl["Workflow lint<br/>actionlint + shellcheck"]
+    py & rust & web & sec & wl --> ok{{"ci-ok<br/>all lanes green"}}
+
+    audit["Weekly Security Audit&nbsp;(cron)<br/>pip-audit · cargo audit · npm audit · Claude sweep"]
+    audit -->|findings| issue["opens/updates<br/>GitHub issue"]
+
+    classDef lane fill:#0d3b66,stroke:#0d3b66,color:#fff;
+    classDef gate fill:#1b998b,stroke:#1b998b,color:#fff;
+    class py,rust,web,sec,wl lane;
+    class ok gate;
+```
+
+Hardening in place: third-party actions pinned by commit SHA, `persist-credentials: false` on every
+checkout, committed lockfiles (`web/package-lock.json` + crate `Cargo.lock`) with `npm ci`,
+`timeout-minutes` on every job, and `cancel-in-progress` concurrency on CI + the review workflow.
+See [`docs/plans/pipeline-improvements.md`](docs/plans/pipeline-improvements.md) (P1–P13).
+
+## Testing & quality gates
+
+Per-language gates, all green on the current branch:
+
+| Lane | Command | Result |
+|---|---|---|
+| Python | `pytest -q` | **277 passed, 14 skipped** |
+| Python | `ruff check .` + `ruff format --check .` | clean |
+| Rust core | `cargo fmt --check` + `cargo clippy -D warnings` + `cargo test` | clean; Rust↔Python parity on shared `tests/vectors/` |
+| Web | `tsc --noEmit` (TypeScript 7) | clean |
+| Web | `eslint .` + `prettier --check .` | clean |
+| Web | `vitest run` | **4 passed** |
+| Workflows | `actionlint` + `shellcheck` | clean on all 3 workflows |
+| Secrets | `gitleaks` | no leaks |
+
+Security metrics are reported **split** (ASR/interception vs. FPR/utility) and printed into the CI
+job summary on every run via [`scripts/gate_summary.py`](scripts/gate_summary.py) — never a single
+blended F1.
+
+> **Note on the web eslint lane:** `typescript-eslint` does not yet support TypeScript 7 (peer
+> `typescript <6.1.0`). While the app tracks TS 7, eslint lints JS/config only; the `.ts`/`.tsx`
+> sources stay covered by `tsc --noEmit` (types) and `prettier --check` (style). Re-add
+> `typescript-eslint` once it ships TS 7 support.
+
 ## Evaluation & results
 
 Security metrics are always reported **split** — Attack Success Rate (ASR) / interception and
@@ -159,8 +246,12 @@ gray-band inputs via a conditional second stage, so benign traffic pays ~0 (see
   rail (L4); **N2** token-level tool-output sanitization (CommandSans-style: injected spans
   stripped, benign data survives, fail-closed re-scan — utility 0 → 1.0 on the poisoned suite);
   **N8** opt-in LLM oversight critic (L7) wired into the live gateway path.
-- ✅ **CI/CD pipeline** — split ASR/FPR gate summary on every run, grouped Dependabot updates,
-  SHA-pinned third-party actions, weekly security audit that files a GitHub issue on findings.
+- ✅ **CI/CD pipeline (P1–P13)** — split ASR/FPR gate summary on every run, grouped Dependabot
+  updates, SHA-pinned third-party actions, and a weekly security audit that files a GitHub issue on
+  findings. **Latest hardening (P8–P13):** fixed a fail-open weekly CVE scan (was auditing an empty
+  env), committed lockfiles + `npm ci`, a real eslint/prettier web lane, polyglot audit coverage
+  (`pip-audit` + `cargo audit` + `npm audit`), per-job `timeout-minutes`, review-workflow
+  concurrency, and an `actionlint` + `shellcheck` workflow-lint lane.
 
 Run `python scripts/demo.py` to watch every layer fire end-to-end. Track detail in
 [`docs/plans/odysseus-guardrails-plan.md`](docs/plans/odysseus-guardrails-plan.md), the defense
