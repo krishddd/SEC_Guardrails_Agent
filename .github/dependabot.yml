@@ -41,3 +41,12 @@ updates:
           - "react-dom"
           - "@types/react"
           - "@types/react-dom"
+      # eslint + @eslint/js are peer-coupled the same way: @eslint/js's peer range
+      # tracks the eslint major, so bumping it alone fails npm's peer resolution
+      # until eslint catches up in a separate PR. eslint-config-prettier has no
+      # such constraint (peer eslint >=7.0.0) but is grouped in for one less PR.
+      eslint:
+        patterns:
+          - "eslint"
+          - "@eslint/js"
+          - "eslint-config-prettier"
