@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -57,7 +57,7 @@ jobs:
             echo "No crate yet — skipping Rust lane."
             echo "go=false" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         if: steps.gate.outputs.go == 'true'
         with:
           python-version: "3.11"
