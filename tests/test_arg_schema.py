@@ -6,15 +6,15 @@ unknown → HITL, extra args ignored when non-strict (the gateway's `content` ke
 false-positive), and end-to-end via `default_engine.guard_tool`.
 """
 
-from core.audit import AuditLog
-from core.engine import default_engine
-from rails.tool.arg_schema import (
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.engine import default_engine
+from sec_guardrails.rails.tool.arg_schema import (
     SchemaDecision,
     ToolArgSchemaRail,
     ToolSchema,
     default_tool_schemas,
 )
-from rails.tool.policy import Effect, ToolCall
+from sec_guardrails.rails.tool.policy import Effect, ToolCall
 
 
 def _rail():

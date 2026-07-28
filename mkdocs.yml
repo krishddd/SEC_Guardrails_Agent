@@ -1,0 +1,36 @@
+site_name: sec-guardrails
+site_description: Defensive 7-layer runtime guardrails gateway for the Odysseus agent
+site_url: https://krishddd.github.io/SEC_Guardrails_Agent/
+repo_url: https://github.com/krishddd/SEC_Guardrails_Agent
+repo_name: krishddd/SEC_Guardrails_Agent
+docs_dir: docs/site
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Overview: index.md
+  - Install & harness: install.md
+  - CLI: cli.md
+  - Python API: api.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - toc:
+      permalink: true

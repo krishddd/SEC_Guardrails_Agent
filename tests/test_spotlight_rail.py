@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from core.native import HAVE_RUST, _py_datamark, datamark
-from core.rail import Action, RailContext, TrustLevel
-from rails.input.spotlight import BOUNDARY_AWARENESS, SpotlightRail
+from sec_guardrails.core.native import HAVE_RUST, _py_datamark, datamark
+from sec_guardrails.core.rail import Action, RailContext, TrustLevel
+from sec_guardrails.rails.input.spotlight import BOUNDARY_AWARENESS, SpotlightRail
 
 VECTORS = json.loads((Path(__file__).parent / "vectors" / "spotlight.json").read_text("utf-8"))
 

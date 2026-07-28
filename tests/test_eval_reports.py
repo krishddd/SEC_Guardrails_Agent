@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from eval.reports import fpr_report, latency_report
+from sec_guardrails.eval.reports import fpr_report, latency_report
 
 BENIGN = json.loads(
     (Path(__file__).parent / "fixtures" / "injection_samples.json").read_text("utf-8")

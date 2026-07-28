@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from core.native import HAVE_RUST, _py_redact_secrets, redact_secrets
-from core.rail import Action, RailContext
-from rails.input.secrets import SecretsRail
+from sec_guardrails.core.native import HAVE_RUST, _py_redact_secrets, redact_secrets
+from sec_guardrails.core.rail import Action, RailContext
+from sec_guardrails.rails.input.secrets import SecretsRail
 
 VECTORS = json.loads((Path(__file__).parent / "vectors" / "secrets.json").read_text("utf-8"))
 

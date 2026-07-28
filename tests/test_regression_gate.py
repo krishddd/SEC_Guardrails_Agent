@@ -7,8 +7,8 @@ baseline caps. This protects the recall/FPR that T8/T9/T11 bought as later rails
 import json
 from pathlib import Path
 
-from eval.regression import evaluate_blocking_rail
-from rails.input.prompt_injection import PromptInjectionRail
+from sec_guardrails.eval.regression import evaluate_blocking_rail
+from sec_guardrails.rails.input.prompt_injection import PromptInjectionRail
 
 _FIX = Path(__file__).parent / "fixtures"
 SAMPLES = json.loads((_FIX / "injection_samples.json").read_text("utf-8"))

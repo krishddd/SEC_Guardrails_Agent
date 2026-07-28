@@ -1,9 +1,9 @@
 from fastapi.testclient import TestClient
 
-from core.audit import AuditLog
-from gateway.ui_api import create_ui_app
-from rails.tool.hitl import HITLManager
-from rails.tool.policy import ToolCall
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.gateway.ui_api import create_ui_app
+from sec_guardrails.rails.tool.hitl import HITLManager
+from sec_guardrails.rails.tool.policy import ToolCall
 
 TOKEN = "ui-secret"
 AUTH = {"Authorization": f"Bearer {TOKEN}"}

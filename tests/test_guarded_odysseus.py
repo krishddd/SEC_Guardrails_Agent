@@ -7,12 +7,12 @@ canary in the reply withheld at output, and a tool trace (when present) guarded 
 
 import httpx
 
-from core.audit import AuditLog
-from core.engine import default_engine
-from core.rail import TrustLevel
-from gateway.guarded_odysseus import GuardedOdysseusClient
-from gateway.odysseus_client import OdysseusClient
-from rails.tool.policy import Effect
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.engine import default_engine
+from sec_guardrails.core.rail import TrustLevel
+from sec_guardrails.gateway.guarded_odysseus import GuardedOdysseusClient
+from sec_guardrails.gateway.odysseus_client import OdysseusClient
+from sec_guardrails.rails.tool.policy import Effect
 
 
 def _guarded(tmp_path, handler, **engine_kw):
@@ -96,7 +96,7 @@ def test_no_trace_no_findings(tmp_path):
 
 def test_oversight_critic_fires_on_reply(tmp_path):
     # N8: a configured critic is invoked on the final trajectory (detective; never blocks).
-    from rails.oversight.critic import Verdict
+    from sec_guardrails.rails.oversight.critic import Verdict
 
     seen = {}
 

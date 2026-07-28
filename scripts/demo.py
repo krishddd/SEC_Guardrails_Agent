@@ -13,9 +13,9 @@ import tempfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "src"))
 
-from agent.runtime import GuardedAgent  # noqa: E402
-from core.audit import AuditLog  # noqa: E402
-from core.engine import default_engine  # noqa: E402
+from sec_guardrails.agent.runtime import GuardedAgent  # noqa: E402
+from sec_guardrails.core.audit import AuditLog  # noqa: E402
+from sec_guardrails.core.engine import default_engine  # noqa: E402
 
 SCENARIOS = [
     "calc: 40 + 2",

@@ -22,9 +22,9 @@ sys.path.insert(0, str(ROOT / "src"))
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from core.config import load_config  # noqa: E402
-from eval.ab_harness import build_live_arms, format_report, run_ab  # noqa: E402
-from eval.benchmarks import load_agentdojo_cases  # noqa: E402
+from sec_guardrails.core.config import load_config  # noqa: E402
+from sec_guardrails.eval.ab_harness import build_live_arms, format_report, run_ab  # noqa: E402
+from sec_guardrails.eval.benchmarks import load_agentdojo_cases  # noqa: E402
 
 _DEFAULT_ENV = "../Agent evals/Agent eval pipeline/.env"
 

@@ -40,24 +40,24 @@ def _bench(fn, *, warm: int = 3, repeats: int = 50) -> tuple[float, float]:
 
 
 def _secrets_fn():
-    from rails.input.secrets import SecretsRail
+    from sec_guardrails.rails.input.secrets import SecretsRail
 
     rail = SecretsRail()
-    from core.rail import RailContext
+    from sec_guardrails.core.rail import RailContext
 
     return lambda s: rail.inspect(RailContext(text=s))
 
 
 def _deberta_fn():
-    from rails.input.prompt_injection import load_deberta_detector
+    from sec_guardrails.rails.input.prompt_injection import load_deberta_detector
 
     det = load_deberta_detector()
     return det.score
 
 
 def _presidio_fn():
-    from core.rail import RailContext
-    from rails.input.pii import PIIRail, load_presidio_detector
+    from sec_guardrails.core.rail import RailContext
+    from sec_guardrails.rails.input.pii import PIIRail, load_presidio_detector
 
     rail = PIIRail(load_presidio_detector(), allow={"IP"})  # real Presidio backend, not heuristic
     return lambda s: rail.inspect(RailContext(text=s))

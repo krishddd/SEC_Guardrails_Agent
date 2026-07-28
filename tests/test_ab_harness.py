@@ -1,6 +1,6 @@
 """T31 — A/B harness core (CI-safe: pure functions, fake target, no live deps)."""
 
-from eval.ab_harness import (
+from sec_guardrails.eval.ab_harness import (
     AttackCase,
     GatewayOutcome,
     HeuristicJudge,

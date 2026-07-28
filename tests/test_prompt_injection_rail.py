@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from core.rail import Action, RailContext
-from rails.input.prompt_injection import (
+from sec_guardrails.core.rail import Action, RailContext
+from sec_guardrails.rails.input.prompt_injection import (
     GRAY_SCORE,
     Detector,
     EnsembleDetector,

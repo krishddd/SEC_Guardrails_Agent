@@ -1,6 +1,10 @@
-from core.rail import Action, RailContext
-from rails.output.content import ContentDetector, ContentRail, HeuristicContentDetector
-from rails.output.grounding import GroundingRail, OverlapGroundingJudge
+from sec_guardrails.core.rail import Action, RailContext
+from sec_guardrails.rails.output.content import (
+    ContentDetector,
+    ContentRail,
+    HeuristicContentDetector,
+)
+from sec_guardrails.rails.output.grounding import GroundingRail, OverlapGroundingJudge
 
 # ── T16 content classifier ───────────────────────────────────────────────────
 

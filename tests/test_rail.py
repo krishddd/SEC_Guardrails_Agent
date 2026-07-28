@@ -1,4 +1,4 @@
-from core.rail import Decision, Rail, RailChain, RailContext
+from sec_guardrails.core.rail import Decision, Rail, RailChain, RailContext
 
 
 class Allow(Rail):

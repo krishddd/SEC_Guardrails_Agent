@@ -7,9 +7,9 @@ allowed, the family arg-mapping (raw `content` → `cmd`/`query`/`url`), token g
 
 from fastapi.testclient import TestClient
 
-from core.audit import AuditLog
-from core.engine import default_engine
-from gateway.app import create_app
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.engine import default_engine
+from sec_guardrails.gateway.app import create_app
 from test_gateway import FakeOdysseus
 
 

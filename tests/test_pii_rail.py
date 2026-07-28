@@ -1,5 +1,5 @@
-from core.rail import Action, RailContext
-from rails.input.pii import HeuristicPIIDetector, PIIDetector, PIIRail
+from sec_guardrails.core.rail import Action, RailContext
+from sec_guardrails.rails.input.pii import HeuristicPIIDetector, PIIDetector, PIIRail
 
 
 def test_heuristic_is_a_detector():

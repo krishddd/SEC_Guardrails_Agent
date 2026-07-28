@@ -5,7 +5,7 @@ import importlib.util
 
 import pytest
 
-from eval.benchmarks import load_agentdojo_cases, wrap_injection
+from sec_guardrails.eval.benchmarks import load_agentdojo_cases, wrap_injection
 
 _HAS_AGENTDOJO = importlib.util.find_spec("agentdojo") is not None
 

@@ -1,5 +1,5 @@
-from rails.memory.retrieval import MemoryStore, RetrievalPolicy
-from rails.memory.write_guard import MemoryRecord, MemoryWriteGuard, Provenance
+from sec_guardrails.rails.memory.retrieval import MemoryStore, RetrievalPolicy
+from sec_guardrails.rails.memory.write_guard import MemoryRecord, MemoryWriteGuard, Provenance
 
 
 def _rec(tenant="t1", content="hello", trust="untrusted", ts=0.0, origin="user"):

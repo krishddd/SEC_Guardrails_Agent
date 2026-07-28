@@ -1,4 +1,4 @@
-from eval.governance import CONTROL_MAP, export, summarize
+from sec_guardrails.eval.governance import CONTROL_MAP, export, summarize
 
 RECORDS = [
     {"decision": "allow", "endpoint": "/api/v1/chat"},

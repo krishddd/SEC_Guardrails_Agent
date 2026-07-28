@@ -1,9 +1,9 @@
-from agent.runtime import GuardedAgent
-from core.audit import AuditLog
-from core.budget import Budget, BudgetTracker
-from core.engine import default_engine
-from core.rail import Action, RailContext
-from rails.dialog.word_filter import WordFilterRail
+from sec_guardrails.agent.runtime import GuardedAgent
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.budget import Budget, BudgetTracker
+from sec_guardrails.core.engine import default_engine
+from sec_guardrails.core.rail import Action, RailContext
+from sec_guardrails.rails.dialog.word_filter import WordFilterRail
 
 # ── budget tracking ──────────────────────────────────────────────────────────
 

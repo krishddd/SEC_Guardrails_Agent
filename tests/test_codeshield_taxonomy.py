@@ -1,9 +1,9 @@
-from core.audit import AuditLog
-from core.engine import default_engine
-from core.rail import Action, RailContext
-from eval.governance import export, taxonomy_breakdown
-from eval.taxonomy import classify
-from rails.tool.code_shield import CodeShieldRail
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.engine import default_engine
+from sec_guardrails.core.rail import Action, RailContext
+from sec_guardrails.eval.governance import export, taxonomy_breakdown
+from sec_guardrails.eval.taxonomy import classify
+from sec_guardrails.rails.tool.code_shield import CodeShieldRail
 
 
 def _shield(code: str) -> Action:

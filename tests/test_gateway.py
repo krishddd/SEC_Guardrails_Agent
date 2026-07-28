@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from gateway.app import create_app
+from sec_guardrails.gateway.app import create_app
 
 
 class FakeOdysseus:

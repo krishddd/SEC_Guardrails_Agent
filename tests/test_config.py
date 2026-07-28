@@ -1,6 +1,6 @@
 import pytest
 
-from core.config import ConfigError, load_config
+from sec_guardrails.core.config import ConfigError, load_config
 
 
 def test_loads_from_env_dict():
