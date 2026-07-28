@@ -34,6 +34,7 @@ app = create_gateway_app(my_client, audit=my_audit, engine=my_engine)
 
 ```python
 import uvicorn
+
 uvicorn.run(build_default_app(), host="127.0.0.1", port=7100)
 ```
 

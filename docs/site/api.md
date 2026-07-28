@@ -17,17 +17,19 @@ Returns a FastAPI application.
 
 ```python
 from sec_guardrails import build_default_app
+
 app = build_default_app()
 ```
 
 ## `create_gateway_app(client, *, audit=None, tracer=None, engine=None, trace_token=None)`
 
 Build a gateway app around a caller-supplied Odysseus `client`. Thin, stable re-export of
-`gateway.app.create_app`; accepts the same keyword arguments. Use this to bring your own client,
-audit sink, tracer, or rail engine.
+`sec_guardrails.gateway.app.create_app`; accepts the same keyword arguments. Use this to bring your own
+client, audit sink, tracer, or rail engine.
 
 ```python
 from sec_guardrails import create_gateway_app
+
 app = create_gateway_app(my_client, audit=my_audit, engine=my_engine)
 ```
 
