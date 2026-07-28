@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from eval.gate import input_gate_metrics, output_gate_metrics  # noqa: E402
+from sec_guardrails.eval.gate import input_gate_metrics, output_gate_metrics  # noqa: E402
 
 _FIX = ROOT / "tests" / "fixtures"
 

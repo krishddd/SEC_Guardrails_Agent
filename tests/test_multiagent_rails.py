@@ -1,6 +1,6 @@
-from core.rail import RailChain
-from rails.input.prompt_injection import PromptInjectionRail
-from rails.multiagent.messaging import (
+from sec_guardrails.core.rail import RailChain
+from sec_guardrails.rails.input.prompt_injection import PromptInjectionRail
+from sec_guardrails.rails.multiagent.messaging import (
     AgentMessage,
     Orchestrator,
     issue_token,

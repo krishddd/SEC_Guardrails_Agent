@@ -23,11 +23,11 @@ sys.path.insert(0, str(ROOT / "src"))
 if hasattr(sys.stdout, "reconfigure"):  # Windows cp1252 consoles choke on non-ASCII
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from core.audit import AuditLog  # noqa: E402
-from core.config import load_config  # noqa: E402
-from core.engine import default_engine  # noqa: E402
-from gateway.app import create_app  # noqa: E402
-from gateway.odysseus_client import OdysseusClient  # noqa: E402
+from sec_guardrails.core.audit import AuditLog  # noqa: E402
+from sec_guardrails.core.config import load_config  # noqa: E402
+from sec_guardrails.core.engine import default_engine  # noqa: E402
+from sec_guardrails.gateway.app import create_app  # noqa: E402
+from sec_guardrails.gateway.odysseus_client import OdysseusClient  # noqa: E402
 
 _DEFAULT_ENV = "../Agent evals/Agent eval pipeline/.env"
 
@@ -39,7 +39,7 @@ def _maybe_critic(config):
     if os.getenv("GATEWAY_LLM_CRITIC", "").lower() not in ("1", "true", "yes"):
         return None
     try:
-        from rails.oversight.llm_critic import load_llm_critic
+        from sec_guardrails.rails.oversight.llm_critic import load_llm_critic
 
         critic = load_llm_critic(config)
         print(f"[gateway] LLM oversight critic ON ({config.llm_model})")

@@ -1,6 +1,6 @@
 import pytest
 
-from rails.tool.egress import EgressGuard
+from sec_guardrails.rails.tool.egress import EgressGuard
 
 BLOCKED = [
     "http://169.254.169.254/latest/meta-data/",  # AWS metadata (link-local)

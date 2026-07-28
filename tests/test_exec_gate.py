@@ -1,7 +1,7 @@
 import pytest
 
-from rails.tool.exec_gate import ExecGate
-from rails.tool.policy import Effect, PolicyEngine, ToolCall
+from sec_guardrails.rails.tool.exec_gate import ExecGate
+from sec_guardrails.rails.tool.policy import Effect, PolicyEngine, ToolCall
 
 # ── destructive shell (hard block) ───────────────────────────────────────────
 

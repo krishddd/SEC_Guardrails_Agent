@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from core.native import HAVE_RUST, _py_sanitize_markup, sanitize_markup
-from core.rail import Action, RailContext
-from rails.output.sanitize import SanitizeRail
+from sec_guardrails.core.native import HAVE_RUST, _py_sanitize_markup, sanitize_markup
+from sec_guardrails.core.rail import Action, RailContext
+from sec_guardrails.rails.output.sanitize import SanitizeRail
 
 VECTORS = json.loads((Path(__file__).parent / "vectors" / "sanitize.json").read_text("utf-8"))
 

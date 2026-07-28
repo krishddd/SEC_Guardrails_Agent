@@ -7,10 +7,10 @@ error, and engine integration via `default_engine(critic=...)`.
 
 from types import SimpleNamespace
 
-from core.audit import AuditLog
-from core.engine import default_engine
-from rails.oversight.critic import Trajectory
-from rails.oversight.llm_critic import LLMCritic, _parse_verdict
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.engine import default_engine
+from sec_guardrails.rails.oversight.critic import Trajectory
+from sec_guardrails.rails.oversight.llm_critic import LLMCritic, _parse_verdict
 
 
 class _FakeCompletions:

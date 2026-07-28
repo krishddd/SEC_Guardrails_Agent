@@ -6,10 +6,10 @@ rails before it re-enters the model, so the poisoned instruction is caught — e
 appeared in the user's message.
 """
 
-from agent.runtime import GuardedAgent
-from agent.tools import Tool, default_tools
-from core.audit import AuditLog
-from core.engine import default_engine
+from sec_guardrails.agent.runtime import GuardedAgent
+from sec_guardrails.agent.tools import Tool, default_tools
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.engine import default_engine
 
 
 def _engine(tmp_path, **kw):

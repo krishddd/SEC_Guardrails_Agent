@@ -1,6 +1,6 @@
-from rails.reasoning.taint import TaintGate, TaintTracker
-from rails.tool.hitl import ApprovalStatus, HITLManager
-from rails.tool.policy import Effect, PolicyEngine, ToolCall
+from sec_guardrails.rails.reasoning.taint import TaintGate, TaintTracker
+from sec_guardrails.rails.tool.hitl import ApprovalStatus, HITLManager
+from sec_guardrails.rails.tool.policy import Effect, PolicyEngine, ToolCall
 
 # ── T28 taint + trusted-action invariant ─────────────────────────────────────
 

@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
-from core.rail import Action, RailContext
-from rails.output.leak import OutputLeakRail
-from rails.output.schema import SchemaRail
+from sec_guardrails.core.rail import Action, RailContext
+from sec_guardrails.rails.output.leak import OutputLeakRail
+from sec_guardrails.rails.output.schema import SchemaRail
 
 # ── T15 schema + reask ───────────────────────────────────────────────────────
 

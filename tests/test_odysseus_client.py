@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from gateway.odysseus_client import OdysseusClient, OdysseusError
+from sec_guardrails.gateway.odysseus_client import OdysseusClient, OdysseusError
 
 
 def make_client(handler, **kw):

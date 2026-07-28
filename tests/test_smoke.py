@@ -9,7 +9,7 @@ from stub_agent.app import app
 
 
 def test_core_imports():
-    import core
+    import sec_guardrails.core as core
 
     assert core.__version__
 

@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from core.audit import AuditLog
-from core.otel import setup_tracing
-from gateway.app import create_app
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.otel import setup_tracing
+from sec_guardrails.gateway.app import create_app
 
 
 class FakeClient:

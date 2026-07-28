@@ -1,6 +1,6 @@
-from core.rail import Action, RailChain, RailContext
-from rails.dialog.task_shield import TaskShieldRail
-from rails.dialog.topics import TopicPolicyRail
+from sec_guardrails.core.rail import Action, RailChain, RailContext
+from sec_guardrails.rails.dialog.task_shield import TaskShieldRail
+from sec_guardrails.rails.dialog.topics import TopicPolicyRail
 
 # ── T13 Task-Shield ──────────────────────────────────────────────────────────
 

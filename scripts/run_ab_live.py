@@ -25,8 +25,8 @@ sys.path.insert(0, str(ROOT / "src"))
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from core.config import load_config  # noqa: E402
-from eval.ab_harness import (  # noqa: E402
+from sec_guardrails.core.config import load_config  # noqa: E402
+from sec_guardrails.eval.ab_harness import (  # noqa: E402
     build_live_arms,
     format_report,
     load_security_module_attacks,

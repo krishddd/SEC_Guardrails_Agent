@@ -4,9 +4,9 @@ Each test drives the agent with a benign or malicious command and asserts the en
 right outcome across the full pipeline (input → tool → memory → output → oversight).
 """
 
-from agent.runtime import GuardedAgent
-from core.audit import AuditLog
-from core.engine import default_engine
+from sec_guardrails.agent.runtime import GuardedAgent
+from sec_guardrails.core.audit import AuditLog
+from sec_guardrails.core.engine import default_engine
 
 
 def _agent(tmp_path, **kw):

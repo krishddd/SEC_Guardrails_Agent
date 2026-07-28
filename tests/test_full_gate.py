@@ -4,7 +4,7 @@ the committed ASR/FPR caps. Metrics reported split, never one F1."""
 import json
 from pathlib import Path
 
-from eval.gate import input_gate_metrics, output_gate_metrics
+from sec_guardrails.eval.gate import input_gate_metrics, output_gate_metrics
 
 _FIX = Path(__file__).parent / "fixtures"
 INJECTION = json.loads((_FIX / "injection_samples.json").read_text("utf-8"))

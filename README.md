@@ -1,6 +1,8 @@
 # SEC_Guardrails_Agent
 
 [![CI](https://github.com/krishddd/SEC_Guardrails_Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/krishddd/SEC_Guardrails_Agent/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/sec-guardrails.svg)](https://pypi.org/project/sec-guardrails/)
+[![Docs](https://img.shields.io/badge/docs-github--pages-blue.svg)](https://krishddd.github.io/SEC_Guardrails_Agent/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](pyproject.toml)
 
@@ -113,7 +115,40 @@ research/ → docs/specs/ → docs/architecture/ (+adr) → docs/plans/ → code
 /research-distill → /explore → /design → /plan → /scaffold → /implement → /test → /review → /docs-sync → /ship
 ```
 
-## Quickstart
+## Install & harness
+
+Building an agent service and need runtime guardrails? Drop `sec-guardrails` in front of it — the
+7-layer rail chain (prompt-injection, PII/secrets, output exfiltration, tool policy, memory poisoning,
+oversight) runs on every turn, no security logic in your app. Released on PyPI as
+[`sec-guardrails`](https://pypi.org/project/sec-guardrails/):
+
+```bash
+pip install sec-guardrails               # control plane; ".[ml]" / ".[bench]" / ".[llm]" add extras
+```
+
+Run the gateway in front of Odysseus, straight from the console entry point:
+
+```bash
+sec-guardrails serve --port 7100         # → point Odysseus at http://localhost:7100/api/_trace
+sec-guardrails version
+```
+
+Harness it from any Python / agentic pipeline — the public API is stable at the top of `sec_guardrails`:
+
+```python
+from sec_guardrails import build_default_app, create_gateway_app
+
+# Turnkey (Odysseus): fully-wired FastAPI app — mount it, or serve with uvicorn.
+app = build_default_app()
+
+# Your own agent: pass a client that speaks the same chat contract, plus your audit sink / rail engine.
+app = create_gateway_app(my_client, audit=my_audit, engine=my_engine)
+```
+
+The distribution ships a single clean top-level package (`sec_guardrails`) — no generic module names
+leak into your environment.
+
+## Quickstart (from source)
 
 ```bash
 # 1. Install (control plane; Rust core + ML detectors are extras)
@@ -147,11 +182,12 @@ before use**.
 | `docs/specs/` | Distilled, structured specs |
 | `docs/architecture/` | Exploration notes, architecture doc, ADRs |
 | `docs/plans/` | Ordered, checkable task lists (`T1–T40`) |
-| `src/gateway/` | FastAPI reverse-proxy gateway (`:7100`) |
-| `src/rails/` | Rail implementations (input/dialog/output/tool/memory/reasoning/multiagent/oversight) |
-| `src/core/` | Rail framework, config, audit, observability |
-| `src/eval/` | A/B attack harness, AgentDojo benchmark driver, latency/FPR reporting |
-| `src/agent/` | Reference tool-executing agent that runs *under* the engine (in-process trace) |
+| `src/sec_guardrails/` | Installable package (`pip install sec-guardrails`); public API + CLI at its top level |
+| `src/sec_guardrails/gateway/` | FastAPI reverse-proxy gateway (`:7100`) |
+| `src/sec_guardrails/rails/` | Rail implementations (input/dialog/output/tool/memory/reasoning/multiagent/oversight) |
+| `src/sec_guardrails/core/` | Rail framework, config, audit, observability |
+| `src/sec_guardrails/eval/` | A/B attack harness, AgentDojo benchmark driver, latency/FPR reporting |
+| `src/sec_guardrails/agent/` | Reference tool-executing agent that runs *under* the engine (in-process trace) |
 | `docs/eval/` | Measured A/B, benchmark, latency, and defense-upgrade results |
 | `crates/guardrails-core/` | Rust security core (PyO3/maturin → `guardrails_core`) |
 | `web/` | TypeScript/React HITL approval + observability dashboard |
@@ -265,4 +301,5 @@ reports.
 
 ## License
 
-License: **TBD** — until a license file is added, all rights reserved by the author.
+[MIT](LICENSE) © Harish. Free to use, modify, and redistribute — defensive tooling meant to be
+harnessed widely.

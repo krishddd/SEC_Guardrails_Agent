@@ -4,7 +4,7 @@ The adversarial set (per ADR-0004) probes guardrail failure modes: deny-by-defau
 tainted args, SSRF/internal hosts, and fail-closed on bad input.
 """
 
-from rails.tool.policy import Effect, PolicyEngine, ToolCall
+from sec_guardrails.rails.tool.policy import Effect, PolicyEngine, ToolCall
 
 # ── T21 happy path (default versioned policy) ────────────────────────────────
 

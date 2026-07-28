@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
-from rails.oversight.critic import HeuristicCritic, OversightRail, Trajectory
-from rails.reasoning.quarantine import QuarantineParser
+from sec_guardrails.rails.oversight.critic import HeuristicCritic, OversightRail, Trajectory
+from sec_guardrails.rails.reasoning.quarantine import QuarantineParser
 
 # ── T27 dual-LLM quarantine ──────────────────────────────────────────────────
 
