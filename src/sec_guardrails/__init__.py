@@ -22,7 +22,7 @@ from typing import Any
 try:
     __version__ = _metadata.version("sec-guardrails")
 except _metadata.PackageNotFoundError:  # running from a source checkout without an install
-    __version__ = "0.1.0"
+    __version__ = "0.1.1"
 
 __all__ = ["__version__", "create_gateway_app", "build_default_app"]
 

@@ -5,6 +5,8 @@ All notable changes to `sec-guardrails` are documented here. Format loosely foll
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-08-24
+
 Deployment hardening (G-series) + next-gen rails N3/N5. Closes the gap between the guardrail
 *library* and the deployed *gateway*. All opt-in additions default off, so existing behaviour is
 unchanged; full suite **366 passed, 14 skipped**. See
@@ -53,5 +55,6 @@ harnessable from any agentic pipeline.
 - The Rust `guardrails_core` extension ships its pure-Python fallback in this release; the
   maturin-built native wheel lands later.
 
-[Unreleased]: https://github.com/krishddd/SEC_Guardrails_Agent/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/krishddd/SEC_Guardrails_Agent/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/krishddd/SEC_Guardrails_Agent/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/krishddd/SEC_Guardrails_Agent/releases/tag/v0.1.0
