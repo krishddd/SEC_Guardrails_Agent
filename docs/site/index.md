@@ -20,6 +20,14 @@ decision.
 | L6 | Multi-agent rails — cross-agent trust boundaries |
 | L7 | Oversight — opt-in LLM critic on the final action |
 
+## Deployed enforcement
+
+`sec-guardrails serve` (and `build_default_app`) enforce the rails on the **deployed** `/api/v1/chat`
+path — input rails run before a turn reaches the model and output rails run before the reply reaches
+the client, with the real allow/block decision written to a **tamper-evident, hash-chained** audit
+log you can check with `sec-guardrails audit verify`. Tool calls can be gated **preventively** before
+execution via `/api/_pretrace`.
+
 ## Install
 
 ```bash

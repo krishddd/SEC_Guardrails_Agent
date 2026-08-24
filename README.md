@@ -130,8 +130,13 @@ Run the gateway in front of Odysseus, straight from the console entry point:
 
 ```bash
 sec-guardrails serve --port 7100         # → point Odysseus at http://localhost:7100/api/_trace
+sec-guardrails audit verify gateway_audit.jsonl   # verify the tamper-evident audit hash chain
 sec-guardrails version
 ```
+
+`serve` now wires the **guarded** client on the deployed chat path: `/api/v1/chat` runs
+`guard_input` → forward → `guard_output` → L7 review on every turn (the rails are on the main path,
+not just the eval harness).
 
 Harness it from any Python / agentic pipeline — the public API is stable at the top of `sec_guardrails`:
 
@@ -155,7 +160,7 @@ leak into your environment.
 python -m pip install -e ".[dev]"          # ".[ml]" deberta/Presidio · ".[bench]" AgentDojo · ".[llm]" L7 critic
 
 # 2. Tests + lint
-pytest -q                                   # 277 pass; Rust↔Python parity runs in CI
+pytest -q                                   # 366 pass; Rust↔Python parity runs in CI
 ruff check . && ruff format --check .
 
 # 3. See every layer fire end-to-end (no external services needed)
@@ -229,7 +234,7 @@ Per-language gates, all green on the current branch:
 
 | Lane | Command | Result |
 |---|---|---|
-| Python | `pytest -q` | **277 passed, 14 skipped** |
+| Python | `pytest -q` | **366 passed, 14 skipped** |
 | Python | `ruff check .` + `ruff format --check .` | clean |
 | Rust core | `cargo fmt --check` + `cargo clippy -D warnings` + `cargo test` | clean; Rust↔Python parity on shared `tests/vectors/` |
 | Web | `tsc --noEmit` (TypeScript 7) | clean |
@@ -282,6 +287,17 @@ gray-band inputs via a conditional second stage, so benign traffic pays ~0 (see
   rail (L4); **N2** token-level tool-output sanitization (CommandSans-style: injected spans
   stripped, benign data survives, fail-closed re-scan — utility 0 → 1.0 on the poisoned suite);
   **N8** opt-in LLM oversight critic (L7) wired into the live gateway path.
+- ✅ **Deployment hardening (G-series, 2026-08)** — closes the gap between the guardrail *library*
+  and the deployed *gateway*: **(G1)** the deployed `/api/v1/chat` path now enforces rails (wired to
+  `GuardedOdysseusClient`, real allow/block audit — no more pass-through); **(G3)** DNS-rebinding
+  egress defense (resolve-time IP checks + IP-pinning session); **(G4)** L7 critic degradation is
+  surfaced (`critic_degraded` audit + OTel event) with FP/FN calibration; **(G2)** taint carried
+  through memory + opt-in paraphrase-resistant sink check; **(G6)** preventive pre-execution tool
+  verdict (`/api/_pretrace`); **(G5)** tamper-evident audit hash chain + `audit verify` CLI;
+  **(N3)** CaMeL data-flow sink policy; **(N5)** plan-then-execute + context-minimization;
+  **(G8)** multilingual injection routing; **(G9)** session-level threat accumulation; **(G10)**
+  latency gate + policy hot-reload + SIEM export; **(G11)** opt-in MCP manifest validation. See
+  [`docs/plans/deployment-hardening.md`](docs/plans/deployment-hardening.md).
 - ✅ **CI/CD pipeline (P1–P13)** — split ASR/FPR gate summary on every run, grouped Dependabot
   updates, SHA-pinned third-party actions, and a weekly security audit that files a GitHub issue on
   findings. **Latest hardening (P8–P13):** fixed a fail-open weekly CVE scan (was auditing an empty

@@ -10,10 +10,11 @@ The installed package version (string).
 
 ## `build_default_app(env_fallback=None)`
 
-Build the fully-wired default gateway: a real `OdysseusClient` (base URL + token from config), the
-default rail engine, and an append-only audit log. Enables the opt-in L7 LLM oversight critic when
-`GATEWAY_LLM_CRITIC` is set. `env_fallback` overrides the `GUARDRAILS_ENV_FALLBACK` config path.
-Returns a FastAPI application.
+Build the fully-wired default gateway: the real `OdysseusClient` fronted by `GuardedOdysseusClient`
+(so the deployed `/api/v1/chat` path enforces `guard_input` → forward → `guard_output` → L7 review —
+rails on the main path, not just the eval harness), plus the default rail engine and an append-only,
+hash-chained audit log. Enables the opt-in L7 LLM oversight critic when `GATEWAY_LLM_CRITIC` is set.
+`env_fallback` overrides the `GUARDRAILS_ENV_FALLBACK` config path. Returns a FastAPI application.
 
 ```python
 from sec_guardrails import build_default_app
@@ -38,5 +39,6 @@ app = create_gateway_app(my_client, audit=my_audit, engine=my_engine)
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/health` | gateway + Odysseus health |
-| `POST` | `/api/v1/chat` | guarded proxy to Odysseus |
-| `POST` | `/api/_trace` | tool-trace ingest; runs each event through the tool rails |
+| `POST` | `/api/v1/chat` | guarded proxy to Odysseus (input/output rails enforced; blocked turns never reach the model) |
+| `POST` | `/api/_pretrace` | **preventive** tool verdict — the hook calls this *before* executing a tool and honors allow/block/hitl (fails closed with no engine) |
+| `POST` | `/api/_trace` | **detective** tool-trace ingest; runs each executed event through the tool rails |
