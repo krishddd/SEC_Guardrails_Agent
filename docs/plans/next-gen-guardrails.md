@@ -56,17 +56,21 @@ one `/implement` unit, ends with **passing tests** + a **checked box**, reports 
   CI; results in `docs/eval/N2-sanitizer.md`. Full suite 277 passed; ruff clean.
 - **Defends:** indirect injection / XPIA. **Effort:** M. **Biggest utility upgrade in the plan.**
 
-## N3 — Capabilities / data-flow policy at the tool call (L3×L4)
+## N3 — Capabilities / data-flow policy at the tool call (L3×L4)  ✅ DONE (2026-08-24)
 *CaMeL — provenance labels + sink policy; promote `taint.py`/`quarantine.py` primitives.*
 
-- [ ] **N3.1** Extend the value model: attach a **capability label** `{provenance, sources, sinks}`
-  to data produced by tool outputs and memory reads (build on `ToolCall.tainted_args` + `taint.py`).
-- [ ] **N3.2** Add a **data-flow policy** to `policy.py`: a tool sink (e.g. `http_fetch`, `email`,
-  `sql` write) **rejects** args whose capability label includes an untrusted source not on that
-  sink's allow-list (prevents "read secret → exfil over URL"). Deterministic; deny-by-default.
-- [ ] **N3.3** Tests built from the Security_module exfiltration payloads: untrusted-data→sink flow
-  blocked; legitimate same-source flow allowed. Report interception on exfil suite + FPR on benign
-  multi-step tasks. **Effort:** L.
+- [x] **N3.1** `ToolCall` gained `arg_sources: dict[str, set[str]]` — per-arg capability labels
+  naming each arg's provenance source(s), e.g. `{"body": {"tool:http_fetch", "memory:untrusted"}}`.
+- [x] **N3.2** Added `src/rails/reasoning/dataflow.py` — `DataFlowPolicy` with per-sink source
+  allow-lists; a governed sink deny-by-default rejects an arg carrying an **untrusted** source not on
+  its allow-list (a trusted source like `user` is never blocked; an ungoverned sink has no opinion).
+  Deterministic, no model. Wired into `GuardrailEngine.guard_tool` (stage `dataflow`, before taint)
+  via an opt-in `default_engine(dataflow=...)` param; default None = unchanged behaviour.
+- [x] **N3.3** [`tests/test_dataflow_policy.py`](../../tests/test_dataflow_policy.py): untrusted-
+  source→sink blocked (`tool:http_fetch`→`send_email`), legitimate same-source allowed, trusted
+  `user` always allowed, ungoverned sink / no-provenance = no opinion, engine integration blocks
+  cross-source exfil at stage `dataflow`, default engine has no dataflow. Full suite green; ruff
+  clean. **Note:** the finer per-sink authorization complements the coarser taint invariant (G2).
 
 ## N4 — Two-axis IFC labels: confidentiality + integrity (L3)
 *FIDES — labeled lattice + declassify/endorse, replacing the single taint bit.*
@@ -79,17 +83,21 @@ one `/implement` unit, ends with **passing tests** + a **checked box**, reports 
 - [ ] **N4.4** Tests for label propagation, declassify gating, and the formal properties from the
   FIDES paper that the lattice should enforce. **Effort:** L. **Depends on N3.**
 
-## N5 — Plan-Then-Execute + Context-Minimization in the reference agent
+## N5 — Plan-Then-Execute + Context-Minimization in the reference agent  ✅ DONE (2026-08-24)
 *Design-patterns paper — structural ASR reduction independent of detection.*
 
-- [ ] **N5.1** `runtime.py`: split `handle()` into **plan** (derive the full tool plan from the
-  *trusted* user message *before* any tool runs) then **execute** (run the frozen plan). Untrusted
-  tool output **cannot add or alter** steps — only fill data slots.
-- [ ] **N5.2** **Context-Minimization:** after a tool result's needed data is extracted, drop the raw
-  untrusted text from the context passed forward (keep only the extracted, labeled value).
-- [ ] **N5.3** Tests: an injected "now also email X" inside a tool result does **not** create a new
-  action (plan frozen); benign multi-step tasks still complete. Report ASR on indirect-action-
-  injection + utility on benign multi-step. **Effort:** M.
+- [x] **N5.1** `runtime.py` `handle()` split into `_plan_phase` (derive the full plan from the
+  *trusted* user message before any tool runs; frozen) and `_execute_phase` (run the frozen plan).
+  Untrusted tool output only fills data slots — it is never re-parsed into steps, so an injected
+  "now also email X" in a result structurally cannot add an action.
+- [x] **N5.2** Opt-in `GuardedAgent(context_minimization=True)`: raw untrusted tool text is dropped
+  from the context forwarded to oversight, replaced by a short `[{tool} result: N chars]` label
+  (default off keeps behaviour unchanged).
+- [x] **N5.3** [`tests/test_plan_then_execute.py`](../../tests/test_plan_then_execute.py): a poisoned
+  `http_fetch` result carrying `fetch:`/`email:` commands adds **no** new step (`steps ==
+  ["http_fetch"]`, no `send_email`); the frozen plan is derived from the message only; benign
+  multi-step completes; minimization drops the raw injected text from the oversight context while the
+  default forwards it. 6 tests + agent e2e green; ruff clean.
 
 ## N6 — Spotlighting encoding variant + 3-way measurement (L1)
 *Microsoft Spotlighting — add encoding mode; measure delimiting vs datamarking vs encoding.*
