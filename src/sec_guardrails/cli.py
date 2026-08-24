@@ -1,6 +1,7 @@
 """``sec-guardrails`` command-line entry point.
 
     sec-guardrails serve [--host H] [--port P]   # run the guardrail gateway in front of Odysseus
+    sec-guardrails audit verify PATH             # verify the tamper-evident audit hash chain (G5)
     sec-guardrails version                        # print the installed version
 
 Registered via ``[project.scripts]`` in pyproject.toml.
@@ -38,6 +39,15 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_audit_verify(args: argparse.Namespace) -> int:
+    from sec_guardrails.core.audit import verify_audit_chain
+
+    key = os.getenv(args.hmac_key_env) if args.hmac_key_env else None
+    report = verify_audit_chain(args.path, hmac_key=key)
+    print(report.summary())
+    return 0 if report.ok else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="sec-guardrails", description=__doc__)
     parser.add_argument("--version", action="version", version=f"sec-guardrails {__version__}")
@@ -51,6 +61,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_serve.add_argument("--env-fallback", default=None, help="path to a fallback .env")
     p_serve.add_argument("--log-level", default="warning", help="uvicorn log level")
     p_serve.set_defaults(func=_cmd_serve)
+
+    p_audit = sub.add_parser("audit", help="audit-log utilities")
+    audit_sub = p_audit.add_subparsers(dest="audit_command", required=True)
+    p_verify = audit_sub.add_parser("verify", help="verify the tamper-evident audit hash chain")
+    p_verify.add_argument("path", help="path to the audit JSONL file")
+    p_verify.add_argument(
+        "--hmac-key-env",
+        default="AUDIT_HMAC_KEY",
+        help="env var holding the operator HMAC key (default AUDIT_HMAC_KEY); skips signature "
+        "checks if unset",
+    )
+    p_verify.set_defaults(func=_cmd_audit_verify)
 
     p_version = sub.add_parser("version", help="print the installed version")
     p_version.set_defaults(func=_cmd_version)

@@ -24,6 +24,10 @@ class Trajectory:
 class Verdict:
     ok: bool
     reason: str
+    # G4: True when the verdict is a DEGRADATION (judge errored / unparseable), not a real judgment.
+    # Lets the engine surface a visible CRITIC_DEGRADED signal instead of silently allowing — so an
+    # attacker who forces API timeouts can't quietly disable the top layer.
+    degraded: bool = False
 
 
 @runtime_checkable

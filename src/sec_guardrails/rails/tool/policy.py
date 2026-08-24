@@ -39,6 +39,10 @@ class ToolCall:
     tainted_args: set[str] = field(default_factory=set)
     # Calling agent's role, for RBAC scoping (ADR-0008). None = unscoped.
     role: str | None = None
+    # N3 (CaMeL): per-arg capability labels — the provenance source(s) of each arg's data
+    # (e.g. {"body": {"tool:http_fetch", "memory:untrusted"}}). Consumed by the data-flow sink
+    # policy; empty = no provenance recorded (data-flow gate has no opinion).
+    arg_sources: dict[str, set[str]] = field(default_factory=dict)
 
 
 @dataclass
