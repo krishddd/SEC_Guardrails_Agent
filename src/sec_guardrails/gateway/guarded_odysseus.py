@@ -74,6 +74,11 @@ class GuardedOdysseusClient:
         self.engine = engine
         self.input_trust = input_trust
 
+    def health_check(self) -> dict[str, Any]:
+        """Delegate to the wrapped client so the gateway `/health` route works for either client
+        type (a bare `OdysseusClient` or this guarded wrapper)."""
+        return self.client.health_check()
+
     def chat(
         self,
         message: str,
@@ -82,8 +87,11 @@ class GuardedOdysseusClient:
         model: str | None = None,
         session: str | None = None,
     ) -> GuardedReply:
-        # 1) Input guard — preventive. A blocked message is never sent to Odysseus.
-        gin = self.engine.guard_input(message, trust=self.input_trust, source="user")
+        # 1) Input guard — preventive. A blocked message is never sent to Odysseus. `session` feeds
+        # the G9 per-session threat accumulator so multi-turn attacks are caught across turns.
+        gin = self.engine.guard_input(
+            message, trust=self.input_trust, source="user", session=session
+        )
         if not gin.allowed:
             return GuardedReply(False, None, gin.reason, "input")
 

@@ -50,13 +50,19 @@ def build_default_app(env_fallback: str | None = None):
     from sec_guardrails.core.audit import AuditLog
     from sec_guardrails.core.config import load_config
     from sec_guardrails.core.engine import default_engine
+    from sec_guardrails.gateway.guarded_odysseus import GuardedOdysseusClient
     from sec_guardrails.gateway.odysseus_client import OdysseusClient
 
     fallback = env_fallback or os.getenv("GUARDRAILS_ENV_FALLBACK")
     config = load_config(fallback_path=fallback) if fallback else load_config()
-    client = OdysseusClient(config.odysseus_base_url, config.odysseus_token)
     audit = AuditLog(os.getenv("GATEWAY_AUDIT_PATH", "gateway_audit.jsonl"))
     engine = default_engine(audit, critic=_maybe_critic(config))
+    # G1: the deployed chat path is guarded. Front the raw Odysseus client with the rail engine so
+    # `/api/v1/chat` runs guard_input (preventive) → forward → guard_output (preventive) → L7
+    # review — the difference between a guardrail *library* and a deployed guardrail *gateway*.
+    client = GuardedOdysseusClient(
+        OdysseusClient(config.odysseus_base_url, config.odysseus_token), engine
+    )
     return create_gateway_app(
         client, audit=audit, engine=engine, trace_token=os.getenv("GATEWAY_TRACE_TOKEN")
     )
