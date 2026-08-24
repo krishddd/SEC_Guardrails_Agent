@@ -41,21 +41,24 @@ def _wrap(label: str, value: str) -> str:
     return f"{label} {_MARK}\n{value}\n{_MARK}"
 
 
-def _parse_verdict(content: str) -> Verdict:
+def _parse_verdict(content: str, *, fail_open: bool = True) -> Verdict:
     """Defensively extract {ok, reason} from the model's reply (tolerates surrounding prose).
 
-    Anything we can't read as a JSON verdict fails OPEN (advisory critic), but says so for audit.
+    Anything we can't read as a JSON verdict is a DEGRADATION: it follows `fail_open` for the `ok`
+    bit but is marked `degraded=True` so the engine emits a visible CRITIC_DEGRADED signal (G4)
+    rather than a verdict indistinguishable from a genuine on-task pass.
     """
+    mode = "fail-open" if fail_open else "fail-closed"
     match = re.search(r"\{.*\}", content, re.DOTALL)
     if not match:
-        return Verdict(True, "llm: no JSON verdict (fail-open)")
+        return Verdict(fail_open, f"llm: no JSON verdict ({mode})", degraded=True)
     try:
         data = json.loads(match.group(0))
         ok = bool(data.get("ok", True))
         reason = str(data.get("reason", "")).strip() or ("on-task" if ok else "flagged")
         return Verdict(ok, f"llm: {reason}")
     except Exception:
-        return Verdict(True, "llm: unparseable judgment (fail-open)")
+        return Verdict(fail_open, f"llm: unparseable judgment ({mode})", degraded=True)
 
 
 class LLMCritic:
@@ -92,10 +95,13 @@ class LLMCritic:
             content = resp.choices[0].message.content or ""
         except Exception as exc:  # the judge is advisory — never let it break the turn
             mode = "fail-open" if self.fail_open else "fail-closed"
+            # G4: a judge error is a DEGRADATION, surfaced (not a silent allow).
             return Verdict(
-                self.fail_open, f"llm: critic unavailable ({type(exc).__name__}) — {mode}"
+                self.fail_open,
+                f"llm: critic unavailable ({type(exc).__name__}) — {mode}",
+                degraded=True,
             )
-        return _parse_verdict(content)
+        return _parse_verdict(content, fail_open=self.fail_open)
 
 
 def load_llm_critic(
