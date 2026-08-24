@@ -9,6 +9,7 @@ words so CI needs no ML.
 """
 
 import re
+import zlib
 
 from sec_guardrails.rails.memory.retrieval import MemoryStore
 from sec_guardrails.rails.memory.write_guard import MemoryRecord, Provenance
@@ -20,14 +21,20 @@ from sec_guardrails.rails.tool.policy import Effect, PolicyEngine, ToolCall
 _ALLOW_ALL = {"version": "test", "default_effect": "allow", "rules": []}
 
 
-def _hash_embedder(dim=64):
-    """Deterministic within a run: bag-of-words over a fixed-dim hash space. Texts sharing tokens
-    get a high cosine; disjoint texts get ~0."""
+def _hash_embedder(dim=256):
+    """Deterministic across processes: bag-of-words over a fixed-dim hash space. Texts sharing
+    tokens get a high cosine; disjoint texts get ~0.
+
+    Uses `zlib.crc32`, NOT the builtin `hash()`: string hashing is salted per process
+    (PYTHONHASHSEED), so builtin `hash()` makes token→bucket assignment — and therefore the cosine
+    between two disjoint texts — vary run to run. Under some seeds the benign text collided into the
+    sensitive text's buckets and crossed the threshold, so the FP test failed intermittently.
+    `dim` is wide enough that the fixtures below collide in zero buckets."""
 
     def embed(text: str) -> list[float]:
         vec = [0.0] * dim
         for tok in re.findall(r"[a-z]+", text.lower()):
-            vec[hash(tok) % dim] += 1.0
+            vec[zlib.crc32(tok.encode()) % dim] += 1.0
         return vec
 
     return embed
