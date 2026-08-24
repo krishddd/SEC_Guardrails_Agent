@@ -4,7 +4,7 @@ Installing the package registers the `sec-guardrails` console entry point.
 
 ```text
 sec-guardrails --help
-usage: sec-guardrails [-h] [--version] {serve,version} ...
+usage: sec-guardrails [-h] [--version] {serve,audit,version} ...
 ```
 
 ## `serve`
@@ -21,6 +21,20 @@ sec-guardrails serve --port 7100
 | `--port` | `7100` / `$GATEWAY_PORT` | bind port |
 | `--env-fallback` | `$GUARDRAILS_ENV_FALLBACK` | path to a fallback `.env` |
 | `--log-level` | `warning` | uvicorn log level |
+
+## `audit verify`
+
+Verify the tamper-evident audit hash chain (G5). Walks the chain and reports the first modified
+record, broken link, malformed line, or bad HMAC signature; exits non-zero on any failure.
+
+```bash
+sec-guardrails audit verify gateway_audit.jsonl
+```
+
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `path` | — | path to the audit JSONL file (required) |
+| `--hmac-key-env` | `AUDIT_HMAC_KEY` | env var holding the operator HMAC key; signature checks are skipped if unset |
 
 ## `version`
 
