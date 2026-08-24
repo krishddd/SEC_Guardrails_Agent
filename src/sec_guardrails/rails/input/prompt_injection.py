@@ -9,6 +9,7 @@ benign) are reported separately — never one F1. Full ASR/FPR vs the live Secur
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
 from sec_guardrails.core.rail import Decision, Rail, RailContext
@@ -178,6 +179,50 @@ class EnsembleDetector:
         return max(score for _, score in scored)
 
 
+def detect_language(text: str) -> str:
+    """G8 — a cheap, offline language gate: return "en" or "non-en".
+
+    Robust for non-Latin scripts (Cyrillic/CJK/Arabic/…): a text whose letters are >20% non-ASCII
+    is "non-en". Pure-ASCII Latin-script non-English (Spanish/French/German without diacritics) is a
+    documented gap — inject a real detector (langdetect / fastText) via `language_detector` there.
+    """
+    letters = [c for c in text if c.isalpha()]
+    if not letters:
+        return "en"
+    non_ascii = sum(1 for c in letters if ord(c) > 127)
+    return "non-en" if non_ascii / len(letters) > 0.2 else "en"
+
+
+class MultilingualInjectionDetector:
+    """G8 — route by language. English text goes to the (English-tuned) `english` detector; non-
+    English text is scored by a `multilingual` detector (e.g. Mistral Moderation, ADR-0003) and
+    MAX-combined with the English detector so an embedded-English attack in an otherwise non-English
+    message is still caught. `language_detector` is injectable (default `detect_language`)."""
+
+    name = "multilingual-routed"
+
+    def __init__(
+        self,
+        english: Detector,
+        multilingual: Detector,
+        *,
+        language_detector: Callable[[str], str] = detect_language,
+        is_english: Callable[[str], bool] = lambda lang: lang == "en",
+    ):
+        self.english = english
+        self.multilingual = multilingual
+        self.language_detector = language_detector
+        self.is_english = is_english
+        self.last_language: str | None = None
+
+    def score(self, text: str) -> float:
+        lang = self.language_detector(text)
+        self.last_language = lang
+        if self.is_english(lang):
+            return self.english.score(text)
+        return max(self.english.score(text), self.multilingual.score(text))
+
+
 class PromptInjectionRail(Rail):
     name = "prompt_injection"
 
@@ -248,6 +293,39 @@ def load_promptguard_detector(
             return prob if is_injection else 1.0 - prob
 
     return _PromptGuardDetector()
+
+
+def load_mistral_injection_detector(model: str = "mistral-moderation-2603") -> Detector:
+    """G8 — a multilingual injection/abuse backend built on Mistral Moderation (ADR-0003,
+    multilingual and already licensed). Lazy-imports mistralai (`mistral` extra); not exercised in
+    CI. Maps the max moderation category score to an injection-likelihood score. Use as the
+    `multilingual` arm of `MultilingualInjectionDetector`.
+    """
+    import os
+
+    from mistralai import Mistral  # lazy: external dep
+
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    class _MistralInjectionDetector:
+        name = "mistral-moderation"
+
+        def score(self, text: str) -> float:
+            resp = client.classifiers.moderate(model=model, inputs=[text])
+            scores = resp.results[0].category_scores
+            return max(scores.values()) if scores else 0.0
+
+    return _MistralInjectionDetector()
+
+
+def load_multilingual_detector(**kwargs) -> MultilingualInjectionDetector:
+    """G8 — the recommended multilingual wiring: heuristic (English) + Mistral Moderation routed by
+    language. Pass to `default_engine(audit, pi_detector=load_multilingual_detector())`. Lazy —
+    requires `MISTRAL_API_KEY` + the `mistral` extra for the non-English arm.
+    """
+    return MultilingualInjectionDetector(
+        HeuristicDetector(), load_mistral_injection_detector(), **kwargs
+    )
 
 
 def load_ensemble_detector(*, use_deberta: bool = True, use_promptguard: bool = False) -> Detector:
