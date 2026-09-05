@@ -32,7 +32,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: anthropics/claude-code-action@1f291e1cfe0f5fc21db2aef19af844591600ade7 # v1
+      - uses: anthropics/claude-code-action@fa2b2666b747000bf42767d1f332065b375e3c8f # v1
         if: env.HAS_KEY == 'true'
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
