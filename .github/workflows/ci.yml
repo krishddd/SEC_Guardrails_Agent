@@ -61,7 +61,7 @@ jobs:
         if: steps.gate.outputs.go == 'true'
         with:
           python-version: "3.11"
-      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # SHA-pinned; toolchain via input
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # SHA-pinned; toolchain via input
         if: steps.gate.outputs.go == 'true'
         with:
           toolchain: stable
